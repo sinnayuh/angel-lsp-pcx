@@ -4,7 +4,7 @@
     "description": "AngelScript Language Server pre-configured for Perception.cx — IntelliSense, type checking, bundler, and full API coverage out of the box.",
     "author": "sinnayuh",
     "license": "MIT",
-    "version": "0.3.87",
+    "version": "0.3.89",
     "repository": {
         "type": "git",
         "url": "https://github.com/sinnayuh/angel-lsp-pcx"
@@ -222,6 +222,15 @@
                     },
                     "default": [],
                     "description": "Paths to additional `.as.predefined` files injected globally on top of the built-in Perception API. Use this for team-shared types or project-specific classes visible across all files."
+                },
+                "angelScript.indexExclude": {
+                    "scope": "window",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": ["output", "node_modules", ".git", "reference"],
+                    "description": "Directory names to skip when indexing the workspace for implicit mutual inclusion. Add any large generated or third-party folders here to speed up startup."
                 },
                 "angelScript.implicitMutualInclusion": {
                     "scope": "window",

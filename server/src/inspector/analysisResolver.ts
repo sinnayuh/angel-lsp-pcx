@@ -59,6 +59,9 @@ export class AnalysisResolver {
     // Set by the server from LSP InitializeParams — the VS Code workspace folder URI.
     private _workspaceRootUri: string | undefined = undefined;
 
+    // Called with (scanned, total) during workspace indexing so the client can show progress.
+    private _scanProgressCallback: ((scanned: number, total: number) => void) | undefined = undefined;
+
     public constructor(
         public readonly _inspectRecords: Map<string, PartialInspectRecord>,
         private readonly _inspectRequest: InspectRequest,
@@ -72,8 +75,11 @@ export class AnalysisResolver {
      * its class fields, so that inspectFile → _analysisResolver.request() is safe.
      */
     public setWorkspaceRoot(uri: string): void {
-        // Normalise: ensure it ends with '/' so startsWith checks work correctly.
         this._workspaceRootUri = uri.endsWith('/') ? uri : uri + '/';
+    }
+
+    public setScanProgressCallback(cb: (scanned: number, total: number) => void): void {
+        this._scanProgressCallback = cb;
     }
 
     public loadBuiltInPredefined(): void {
@@ -339,24 +345,51 @@ export class AnalysisResolver {
             const scanRoot = this._workspaceRootUri ?? (dirs[0] ? dirs[0] + '/' : undefined);
             if (scanRoot !== undefined && !this._scannedImplicitDirectories.has(scanRoot)) {
                 this._scannedImplicitDirectories.add(scanRoot);
-                this.inspectUnderDirectory(scanRoot);
+                const total = this.countAsFiles(scanRoot);
+                const progress = {scanned: 0, total};
+                this._scanProgressCallback?.(0, total);
+                this.inspectUnderDirectory(scanRoot, progress);
+                this._scanProgressCallback?.(total, total);
             }
         }
 
         return undefined;
     }
 
-    private inspectUnderDirectory(dirUri: string) {
+    private inspectUnderDirectory(dirUri: string, progress?: { scanned: number; total: number }) {
+        const exclude = new Set(getGlobalSettings().indexExclude ?? []);
         const entries = this.getDirectoryEntries(dirUri);
         for (const entry of entries) {
             const fileUri = resolveUri(dirUri, entry.name);
             if (entry.isDirectory()) {
-                this.inspectUnderDirectory(`${fileUri}/`);
+                if (!exclude.has(entry.name)) {
+                    this.inspectUnderDirectory(`${fileUri}/`, progress);
+                }
             } else if (entry.isFile() && fileUri.endsWith('.as')) {
                 const content = readFileContent(fileUri);
-                if (content !== undefined) this._inspectRequest(fileUri, content);
+                if (content !== undefined) {
+                    this._inspectRequest(fileUri, content);
+                    if (progress) {
+                        progress.scanned++;
+                        this._scanProgressCallback?.(progress.scanned, progress.total);
+                    }
+                }
             }
         }
+    }
+
+    // Quick pass to count indexable .as files so we can report accurate progress.
+    private countAsFiles(dirUri: string): number {
+        const exclude = new Set(getGlobalSettings().indexExclude ?? []);
+        let count = 0;
+        for (const entry of this.getDirectoryEntries(dirUri)) {
+            if (entry.isDirectory() && !exclude.has(entry.name)) {
+                count += this.countAsFiles(`${resolveUri(dirUri, entry.name)}/`);
+            } else if (entry.isFile() && entry.name.endsWith('.as')) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private getDirectoryEntries(dirUri: string) {

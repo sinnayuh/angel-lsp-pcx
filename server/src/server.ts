@@ -53,6 +53,10 @@ s_connection.onInitialize((params: lsp.InitializeParams) => {
         params.workspaceFolders?.[0]?.uri ?? params.rootUri ?? undefined;
     if (workspaceRoot) s_inspector.setWorkspaceRoot(workspaceRoot);
 
+    s_inspector.setScanProgressCallback((scanned, total) => {
+        s_connection.sendNotification('angelScript/indexProgress', {scanned, total});
+    });
+
     // Does the client support the `workspace/configuration` request?
     // If not, we fall back using global settings.
 

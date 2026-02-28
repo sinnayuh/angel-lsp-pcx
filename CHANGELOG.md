@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.3.89] — Indexing Progress & Faster Workspace Scan
+
+### Added
+- **Indexing progress bar** — the status bar item now shows `$(sync~spin) Indexing (n/total)` while the LSP scans the workspace on startup, then reverts to `$(code) Perception AS` when complete.
+- **`angelScript.indexExclude` setting** — array of directory names to skip during workspace indexing (default: `["output", "node_modules", ".git", "reference"]`). Add any large generated or third-party folders to speed up startup significantly.
+
+### Changed
+- Workspace scanner now skips excluded directories (configurable via `angelScript.indexExclude`) instead of recursing into everything, which greatly reduces indexing time on larger projects.
+- Progress is reported per-file so the count in the status bar updates in real time.
+
+---
+
 ## [0.3.87] — Workspace-scoped Inclusion & Bundler Error Panel
 
 ### Added

@@ -7,6 +7,7 @@ interface LanguageServerSettings {
     includePath: string[];
     forceIncludePredefined: string[];
     implicitMutualInclusion: boolean;
+    indexExclude: string[];
     hoistEnumParentScope: boolean;
     explicitPropertyAccessor: boolean;
     allowUnicodeIdentifiers: boolean;
@@ -31,6 +32,7 @@ const defaultSettings: LanguageServerSettings = {
     includePath: [],
     forceIncludePredefined: [],
     implicitMutualInclusion: false,
+    indexExclude: ['output', 'node_modules', '.git', 'reference', '.cursor', '.claude', '.specstory'],
     hoistEnumParentScope: false,
     explicitPropertyAccessor: false,
     allowUnicodeIdentifiers: false,

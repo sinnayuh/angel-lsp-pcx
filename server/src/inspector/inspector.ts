@@ -96,6 +96,10 @@ export class Inspector {
         this._analysisResolver.setWorkspaceRoot(uri);
     }
 
+    public setScanProgressCallback(cb: (scanned: number, total: number) => void): void {
+        this._analysisResolver.setScanProgressCallback(cb);
+    }
+
     private createRecordAndInsert(uri: string, content: string): InspectRecord {
         const record = createEmptyRecord(uri, content);
         this._inspectRecords.set(uri, record);

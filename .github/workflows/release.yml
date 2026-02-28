@@ -55,7 +55,8 @@ jobs:
             COMMITS=$(git log --pretty=format:"- %s" "${PREV_TAG}..HEAD")
           fi
 
-          CHANGELOG=$(awk '/^## \[Perception Fork\]/{found=1; next} found && /^---/{exit} found{print}' CHANGELOG.md | sed '/^[[:space:]]*$/d')
+          # Extract the topmost changelog entry (between first ## [...] heading and the next one or a --- separator)
+          CHANGELOG=$(awk '/^## \[/{if(found) exit; found=1; next} found && /^---/{exit} found{print}' CHANGELOG.md | sed '/^[[:space:]]*$/d')
 
           {
             echo "## What's in this release"
@@ -64,7 +65,7 @@ jobs:
             echo ""
             echo "---"
             echo ""
-            echo "## Perception API"
+            echo "## Changelog"
             echo ""
             echo "$CHANGELOG"
           } > release_notes.md

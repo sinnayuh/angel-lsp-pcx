@@ -47,7 +47,19 @@ export function activate(context: ExtensionContext) {
     subscribeCommands(context);
     setupStatusBar(context);
 
-    s_client.start();
+    s_client.start().then(() => {
+        s_client.onNotification('angelScript/indexProgress', ({scanned, total}: {scanned: number; total: number}) => {
+            if (!s_statusBar) return;
+            if (scanned < total) {
+                s_statusBar.text = `$(sync~spin) Indexing (${scanned}/${total})`;
+                s_statusBar.tooltip = 'Perception AngelScript — indexing workspace files...';
+                s_statusBar.show();
+            } else {
+                s_statusBar.text = '$(code) Perception AS';
+                s_statusBar.tooltip = 'Perception AngelScript — click for commands';
+            }
+        });
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {
