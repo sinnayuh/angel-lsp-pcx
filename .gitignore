@@ -4,3 +4,9 @@ client/server
 .vscode-test
 tsconfig.tsbuildinfo
 server/angelscript-language-server.js
+.specstory
+.idea/
+CLAUDE.md
+.cursor/
+*.vsix
+.cursorindexingignore

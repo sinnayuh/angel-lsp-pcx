@@ -1,111 +1,156 @@
-# AngelScript Language Server for VSCode
+# AngelScript for Perception
 
-![ci](https://github.com/sashi0034/angel-lsp/actions/workflows/ci.yml/badge.svg)
-![Version (including pre-releases)](https://img.shields.io/visual-studio-marketplace/v/sashi0034.angel-lsp)
-![Installs](https://img.shields.io/visual-studio-marketplace/i/sashi0034.angel-lsp)
+A fully pre-configured AngelScript Language Server for [Perception.cx](https://perception.cx) — install and start writing scripts immediately, with zero setup required.
 
-This is a Language Server for Visual Studio Code that offers features to make AngelScript development easier and faster.
+Built on top of the excellent [angel-lsp](https://github.com/sashi0034/angel-lsp) project by [@sashi0034](https://github.com/sashi0034).
 
 ![sample.png](https://raw.githubusercontent.com/sashi0034/angel-lsp/main/sample.png)
 
-
-# Introduction
-
-While there are already AngelScript Language Server extensions available for VSCode, many of them are platform-specific.
-For example, there are excellent Language Servers specialized for specific environments like
-[Unreal Angelscript](https://marketplace.visualstudio.com/items?itemName=Hazelight.unreal-angelscript) and
-[Openplanet Angelscript](https://marketplace.visualstudio.com/items?itemName=XertroV.openplanet-angelscript).
-Developers working in these environments are encouraged to use those options.
-
-However, if you are looking for a general-purpose Language Server that is not dependent on a particular application, this extension might be useful for you.
-This extension aims to serve as a universal Language Server, independent of any specific application that integrates AngelScript.
+> **Install:** Download the latest `.vsix` from [Releases](https://github.com/sinnayuh/angel-lsp-pcx/releases) and use **"Extensions: Install from VSIX..."** in VS Code.
 
 
-# Features
+## Features
 
-The Language Server analyzes AngelScript files within your project and offers the following features:
+The entire Perception AngelScript API is bundled directly into the extension. Every feature works out-of-the-box:
 
-- Syntax Highlighting for AngelScript
-- Autocompletion
-- Type Checking
-- Go to Definition
-- Find References
-- Symbol Renaming
-- Snippets
-- Code Actions
-- Formatter
-- Debugger
-
-> Note: As this project is still under development, there may be bugs or incomplete support for some of these features. Future updates will continue to improve functionality.
-
-
-# Getting Started
-
-1. Install this extension from the Visual Studio Code Marketplace.
-
-1. Create a file named `as.predefined` in the root directory of your AngelScript project.
-
-   `as.predefined` is a custom file used by this Language Server.
-
-   ![folder_example.png](https://raw.githubusercontent.com/sashi0034/angel-lsp/main/folder_example.png)
-
-1. In `as.predefined`, define your application’s types and functions using AngelScript syntax.
-
-   When analyzing `*.as` files, this Language Server implicitly imports symbols defined in `as.predefined`.
-
-   This allows the Language Server to recognize the custom types and functions defined by your application, enabling autocompletion and type checking.
-
-   You can check actual examples of `as.predefined` below:
-
-    - [OpenSiv3D/as.predefined](./examples/OpenSiv3D/as.predefined) for [OpenSiv3D](https://github.com/Siv3D/OpenSiv3D) (v0.6)
-
-    - [Sven Co-op/as.predefined](./examples/Sven%20Co-op/as.predefined) for [Sven Co-op](https://store.steampowered.com/app/225840/Sven_Coop) by [@DrAbcOfficial](https://github.com/DrAbcOfficial)
-
-    - [Trackmania Nations Forever/as.predefined](./examples/Trackmania%20Nations%20Forever/as.predefined) for [TMInterface](https://donadigo.com/tminterface/) by [@Tulis12](https://github.com/Tulis12)
-
-   In many cases, `as.predefined` can also be automatically generated.
-
-   - [Example of generate `as.predefined` in C++](./examples/generate_as_predefined.cpp)
-
-# Documentation
-
-- [User Settings](./docs/user_settings.md)
-
-> Note: Documentation for the Debugger, Code Actions, and other features is currently missing and will be added in a future update.
-
-# Unimplemented Features
-
-The following features are currently under development:
-
-- Detailed AngelScript features: Support for `import` is still incomplete.
-- Enhanced Type Checking: Current support for handlers and const is limited.
+| Feature | Description |
+|---------|-------------|
+| **Autocompletion** | All Perception globals, classes, and methods with parameter hints |
+| **Hover docs** | Inline documentation for every API function and type |
+| **Signature help** | Parameter hints as you type function calls |
+| **Go to Definition** | Ctrl+click any symbol to jump to its declaration |
+| **Find References** | Find every use of a variable, function, or class |
+| **Type Checking** | Catch type mismatches and undefined symbols as you code |
+| **Error Highlighting** | Syntax and semantic errors highlighted in real time |
+| **Symbol Renaming** | Safe rename across all files in your project |
+| **Snippets** | Perception-specific code templates (see below) |
+| **Formatter** | Auto-format on type |
+| **Bundler** | Built-in multi-file bundler for `.as` projects |
+| **Debugger** | DAP-based debugger attachment support |
 
 
-# Other Clients
+## Getting Started
 
-This plugin is also available on Open VSX.
+1. Download the latest `.vsix` file from the [Releases](https://github.com/sinnayuh/angel-lsp-pcx/releases) page.
+2. In VS Code, open the Command Palette (`Ctrl+Shift+P`) and run **"Extensions: Install from VSIX..."**, then select the downloaded file.
+3. Open a folder containing your `.as` files.
+4. Start writing — IntelliSense is active immediately.
 
-- [AngelScript Language Server (Open VSX)](https://open-vsx.org/extension/sashi0034/angel-lsp)
-
-It's still in development, but there are implementations for IntelliJe as well.
-
-- [AngelScript Language Server for IntelliJ](https://plugins.jetbrains.com/plugin/26645-angelscript-language-server)
-
-
-# Issues and Contributions
-
-Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/sashi0034/angel-lsp/issues) .
-
-If you fix a small bug or add an enhancement, feel free to submit a pull request.
-
-Additionally, if you create an `as.predefined` file for your application, contributing it as an example would be greatly appreciated and could be helpful to others.
+No `as.predefined` file needed. The full Perception API (proc, GUI, render, math, mutex, atomics, networking, JSON, system, engine helpers) is baked in.
 
 
-## Contributors
-![GitHub Contributors Image](https://contrib.rocks/image?repo=sashi0034/angel-lsp)
+## Bundling Multi-File Projects
+
+Perception scripts must be submitted as a single `.as` file. This extension includes a bundler that concatenates `#include`-linked files into one output file.
+
+### Quick command
+
+Open the Command Palette (`Ctrl+Shift+P`) and run:
+
+- **`AngelScript: Bundle Script`** — bundles with comments preserved
+- **`AngelScript: Bundle Script (Strip Comments)`** — minified, comments removed
+
+### Automated build task
+
+Add an `angelscript-bundle` task to your `.vscode/tasks.json`:
+
+```jsonc
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Bundle Perception Script",
+            "type": "angelscript-bundle",
+            "src": "source",
+            "out": "output/script.as",
+            "strip": true,
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
+```
+
+Run the task with `Ctrl+Shift+B`. The bundler resolves `#include` directives recursively, detects circular dependencies, and checks for LSP errors before building.
 
 
-# License
+## Snippets
 
-This repository is licensed under the [MIT License](https://github.com/sashi0034/angel-lsp/blob/main/LICENSE).
+| Prefix | Description |
+|--------|-------------|
+| `pcx-main` | Script entry point (`main` + `on_unload`) |
+| `pcx-callback` | Register a recurring callback thread |
+| `pcx-attach` | Attach to a process with `ref_process` |
+| `pcx-gui` | Create a subtab with a settings panel |
+| `pcx-mutex` | Declare and use a `mutex_t` |
+| `pcx-esp` | ESP draw loop skeleton |
+| `pcx-w2s` | Unreal Engine world-to-screen call |
+| `pcx-class` | Named class with `m_` member convention |
+| `pcx-rip` | RIP-relative address resolver helper |
 
+
+## Project Layout (Recommended)
+
+```
+my-script/
+├── source/
+│   ├── main.as           ← entry point (main + on_unload)
+│   ├── core/
+│   │   └── process.as
+│   ├── rendering/
+│   │   └── esp.as
+│   └── utility/
+│       └── offsets.as
+└── .vscode/
+    └── tasks.json        ← angelscript-bundle task
+```
+
+In `main.as`:
+
+```cpp
+#include "core/process.as"
+#include "rendering/esp.as"
+#include "utility/offsets.as"
+
+int main()
+{
+    return 1;
+}
+
+void on_unload()
+{
+}
+```
+
+
+## Adding Project-Specific Symbols
+
+The built-in Perception API covers all public globals and types. If you want IntelliSense for your own shared types, create an `as.predefined` file in your project root and define them there — the LSP will merge it with the built-in definitions automatically.
+
+
+## Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `angelScript.suppressAnalyzerErrors` | `true` | Show analyzer issues as warnings (recommended — analyzer is still a preview) |
+| `angelScript.implicitMutualInclusion` | `false` | Make all `.as` files in the workspace visible to each other without explicit `#include` |
+| `angelScript.includePath` | `[]` | Additional directories to search when resolving `#include` |
+| `angelScript.forceIncludePredefined` | `[]` | Extra `.as.predefined` files to inject globally (for team-shared type libraries) |
+| `angelScript.formatter.indentSpaces` | `4` | Indentation width |
+| `angelScript.formatter.useTabIndent` | `false` | Use tabs instead of spaces |
+
+Full settings reference: [docs/user_settings.md](./docs/user_settings.md)
+
+
+## Credits
+
+This extension ([sinnayuh/angel-lsp-pcx](https://github.com/sinnayuh/angel-lsp-pcx)) is a Perception-specific fork of [angel-lsp](https://github.com/sashi0034/angel-lsp) by [@sashi0034](https://github.com/sashi0034), licensed under the [MIT License](./LICENSE).
+
+The original project provides a general-purpose AngelScript Language Server. The Perception API definitions, bundler integration, and Perception-specific snippets are additions made on top of that foundation.
+
+
+## License
+
+[MIT License](./LICENSE)

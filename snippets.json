@@ -171,5 +171,192 @@
             "#include \"${1:HEADER}\""
         ],
         "description": "Include other file"
+    },
+
+    "Perception: Script entry point": {
+        "prefix": "pcx-main",
+        "body": [
+            "int main()",
+            "{",
+            "\t${1:// Initialize: attach to process, create GUI, register callbacks}",
+            "\treturn 1;",
+            "}",
+            "",
+            "void on_unload()",
+            "{",
+            "\t${2:// Cleanup: destroy mutexes, release process handles}",
+            "}"
+        ],
+        "description": "Perception script entry point with main() and on_unload()"
+    },
+
+    "Perception: Callback thread": {
+        "prefix": "pcx-callback",
+        "body": [
+            "void ${1:OnCallback}(int callback_id, int data_index)",
+            "{",
+            "\t${2:// Drawing and input are unique to this thread}",
+            "}",
+            "",
+            "int main()",
+            "{",
+            "\tint cb_id = register_callback(@${1:OnCallback}, ${3:16}, 0);",
+            "\tif (cb_id == 0)",
+            "\t{",
+            "\t\tlog_error(\"Failed to register callback\");",
+            "\t\treturn 0;",
+            "\t}",
+            "\treturn 1;",
+            "}"
+        ],
+        "description": "Perception callback thread registration and handler"
+    },
+
+    "Perception: ESP render loop": {
+        "prefix": "pcx-esp",
+        "body": [
+            "void ${1:RenderCallback}(int callback_id, int data_index)",
+            "{",
+            "\tset_thread_to_highest_priority();",
+            "",
+            "\tfloat vw, vh;",
+            "\tget_view(vw, vh);",
+            "",
+            "\t// Example: draw text at screen center",
+            "\tuint64 font = get_font20();",
+            "\tdraw_text(\"${2:ESP}\", vw * 0.5f, vh * 0.5f,",
+            "\t\t255, 255, 255, 255,",
+            "\t\tfont, TE_OUTLINE,",
+            "\t\t0, 0, 0, 200, 1.0f);",
+            "}"
+        ],
+        "description": "Perception ESP render callback skeleton"
+    },
+
+    "Perception: GUI panel setup": {
+        "prefix": "pcx-gui",
+        "body": [
+            "subtab_t ${1:g_Tab};",
+            "checkbox_t ${2:g_Enabled};",
+            "slider_double_t ${3:g_Distance};",
+            "",
+            "void SetupGui()",
+            "{",
+            "\t${1:g_Tab} = create_subtab(0, \"${4:My Script}\");",
+            "\tif (!${1:g_Tab}.is_valid())",
+            "\t{",
+            "\t\tlog_error(\"[GUI] Failed to create subtab\");",
+            "\t\treturn;",
+            "\t}",
+            "\tpanel_t p = ${1:g_Tab}.add_panel(\"${5:Settings}\", false);",
+            "\t${2:g_Enabled} = p.add_checkbox(\"Enable\", false);",
+            "\t${3:g_Distance} = p.add_slider_double(\"Distance\", \"m\", 100.0, 0.0, 500.0, 1.0);",
+            "}"
+        ],
+        "description": "Perception GUI subtab, panel, checkbox and slider boilerplate"
+    },
+
+    "Perception: Process attach": {
+        "prefix": "pcx-proc",
+        "body": [
+            "proc_t ${1:g_Proc};",
+            "",
+            "bool AttachToProcess()",
+            "{",
+            "\t${1:g_Proc} = ref_process(\"${2:game.exe}\");",
+            "\tif (!${1:g_Proc}.alive())",
+            "\t{",
+            "\t\tlog_error(\"[Proc] Process not found: ${2:game.exe}\");",
+            "\t\treturn false;",
+            "\t}",
+            "\tlog(\"[Proc] Attached — base: 0x\" + formatUInt(${1:g_Proc}.base_address(), \"0H\", 16));",
+            "\treturn true;",
+            "}"
+        ],
+        "description": "Perception process attachment with alive() check"
+    },
+
+    "Perception: Mutex guard": {
+        "prefix": "pcx-mutex",
+        "body": [
+            "mutex_t ${1:g_Mutex} = create_mutex();",
+            "",
+            "void ${2:WriteSharedData}()",
+            "{",
+            "\t${1:g_Mutex}.lock();",
+            "\t${3:// Write shared data here}",
+            "\t${1:g_Mutex}.unlock();",
+            "}",
+            "",
+            "void ${4:ReadSharedData}()",
+            "{",
+            "\t${1:g_Mutex}.lock_shared();",
+            "\t${5:// Read shared data here}",
+            "\t${1:g_Mutex}.unlock_shared();",
+            "}"
+        ],
+        "description": "Perception mutex create with lock/unlock guard pattern"
+    },
+
+    "Perception: HTTP GET request": {
+        "prefix": "pcx-http",
+        "body": [
+            "uint status = 0;",
+            "string body;",
+            "if (net_http_get(\"${1:https://example.com/api}\", status, body, 5000))",
+            "{",
+            "\tif (status == 200)",
+            "\t{",
+            "\t\t${2:// Handle body}",
+            "\t\tlog(\"[HTTP] OK: \" + body.substr(0, 80));",
+            "\t}",
+            "\telse",
+            "\t{",
+            "\t\tlog_error(\"[HTTP] Status \" + status);",
+            "\t}",
+            "}",
+            "else",
+            "{",
+            "\tlog_error(\"[HTTP] Request failed\");",
+            "}"
+        ],
+        "description": "Perception net_http_get with status and error checking"
+    },
+
+    "Perception: RIP-relative resolve": {
+        "prefix": "pcx-rip",
+        "body": [
+            "// Resolves a RIP-relative address from an instruction like: mov rax, [rip+offset]",
+            "// instructionAddr: address of the instruction. dispOffset: offset to the 4-byte displacement.",
+            "// instrLen: total instruction length (displacement ends at instructionAddr + instrLen).",
+            "uint64 ResolveRIP(proc_t@ proc, uint64 instructionAddr, int dispOffset = 3, int instrLen = 7)",
+            "{",
+            "\tint32 displacement = proc.r32(instructionAddr + dispOffset);",
+            "\treturn instructionAddr + instrLen + uint64(displacement);",
+            "}"
+        ],
+        "description": "RIP-relative address resolution helper for pattern scan results"
+    },
+
+    "Perception: World to screen": {
+        "prefix": "pcx-w2s",
+        "body": [
+            "matrix4x4 ${1:viewMatrix};",
+            "${1:viewMatrix}.readas_float(${2:proc}, ${3:viewMatrixAddr});",
+            "",
+            "vector3 ${4:worldPos}(${5:0.0}, ${6:0.0}, ${7:0.0});",
+            "vector2 ${8:screen};",
+            "",
+            "if (world_to_screen_rowmajor(${4:worldPos}, ${1:viewMatrix}, ${8:screen}))",
+            "{",
+            "\tdraw_circle(${8:screen}.x, ${8:screen}.y, 5.0f, 255, 0, 0, 255, 1.0f, true);",
+            "\tdraw_text(\"${9:Target}\",",
+            "\t\t${8:screen}.x, ${8:screen}.y - 20.0f,",
+            "\t\t255, 255, 255, 255,",
+            "\t\tget_font18(), TE_OUTLINE,",
+            "\t\t0, 0, 0, 200, 1.0f);",
+            "}"
+        ],
+        "description": "Perception world_to_screen_rowmajor usage with draw_circle and draw_text"
     }
 }

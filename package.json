@@ -1,24 +1,29 @@
 {
     "name": "angel-lsp",
-    "displayName": "AngelScript Language Server",
-    "description": "VSCode extensions for AngelScript Language Server",
-    "author": "sashi0034",
+    "displayName": "AngelScript for Perception",
+    "description": "AngelScript Language Server pre-configured for Perception.cx — IntelliSense, type checking, bundler, and full API coverage out of the box.",
+    "author": "sinnayuh",
     "license": "MIT",
     "version": "0.3.82",
     "repository": {
         "type": "git",
-        "url": "https://github.com/sashi0034/angel-lsp"
+        "url": "https://github.com/sinnayuh/angel-lsp-pcx"
     },
-    "publisher": "sashi0034",
+    "publisher": "sinnayuh",
     "categories": [
         "Programming Languages",
-        "Debuggers"
+        "Debuggers",
+        "Snippets"
     ],
     "keywords": [
-        "angelscript"
+        "angelscript",
+        "perception",
+        "perception.cx",
+        "lsp",
+        "language-server"
     ],
     "bugs": {
-        "url": "https://github.com/sashi0034/angel-lsp/issues"
+        "url": "https://github.com/sinnayuh/angel-lsp-pcx/issues"
     },
     "engines": {
         "vscode": "^1.75.0"
@@ -87,6 +92,38 @@
             {
                 "command": "angelScript.debug.printGlobalScope",
                 "title": "AngelScript: Print Global Scope in Current File"
+            },
+            {
+                "command": "angelScript.bundle",
+                "title": "AngelScript: Bundle Script"
+            },
+            {
+                "command": "angelScript.bundleStripped",
+                "title": "AngelScript: Bundle Script (Strip Comments)"
+            }
+        ],
+        "taskDefinitions": [
+            {
+                "type": "angelscript-bundle",
+                "required": [
+                    "src",
+                    "out"
+                ],
+                "properties": {
+                    "src": {
+                        "type": "string",
+                        "description": "Source directory containing .as files (relative to workspace root)"
+                    },
+                    "out": {
+                        "type": "string",
+                        "description": "Output bundled file path (relative to workspace root)"
+                    },
+                    "strip": {
+                        "type": "boolean",
+                        "description": "Strip comments from the bundled output",
+                        "default": false
+                    }
+                }
             }
         ],
         "semanticTokenTypes": [
@@ -129,7 +166,7 @@
                     "scope": "window",
                     "type": "boolean",
                     "default": true,
-                    "description": "Report problems found in the analyzer as warnings instead of errors (true is recommended since the current analyzer is a preview version and has bugs)"
+                    "description": "Report type-analyzer problems as warnings instead of errors. Recommended (true) — the analyzer is a preview and may produce false positives."
                 },
                 "angelScript.builtinStringType": {
                     "scope": "window",
@@ -159,7 +196,7 @@
                         "type": "string"
                     },
                     "default": [],
-                    "description": "Paths (absolute recommended) to one or more `as.predefined` files that will always be included globally, regardless of the project's configuration."
+                    "description": "Paths to additional `.as.predefined` files injected globally on top of the built-in Perception API. Use this for team-shared types or project-specific classes visible across all files."
                 },
                 "angelScript.implicitMutualInclusion": {
                     "scope": "window",
@@ -297,7 +334,8 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
-        "compile": "tsc -b",
+        "compile": "tsc -b && npm run copy-predefined",
+        "copy-predefined": "node -e \"const fs=require('fs'),path=require('path');const src=path.join('server','src','predefined');const dst=path.join('server','out','predefined');fs.mkdirSync(dst,{recursive:true});for(const f of fs.readdirSync(src)){fs.copyFileSync(path.join(src,f),path.join(dst,f));console.log('Copied predefined: '+f);}\"",
         "watch": "tsc -b -w",
         "lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",

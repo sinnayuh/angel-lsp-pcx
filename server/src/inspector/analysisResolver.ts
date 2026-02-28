@@ -56,12 +56,27 @@ export class AnalysisResolver {
         public readonly _inspectRecords: Map<string, PartialInspectRecord>,
         private readonly _inspectRequest: InspectRequest,
         private readonly _diagnosticsCallback: DiagnosticsCallback,
+        private readonly _builtInPredefinedUri: string | undefined = undefined,
     ) {
+        // Register the built-in Perception predefined file immediately so it is
+        // available to every .as file without any user configuration.
+        if (_builtInPredefinedUri !== undefined) {
+            const content = readFileContent(_builtInPredefinedUri);
+            if (content !== undefined) {
+                this._inspectRequest(_builtInPredefinedUri, content);
+                this._resolvedPredefinedFilepaths.add(_builtInPredefinedUri);
+            }
+        }
     }
 
     public reset() {
         this._analysisQueue.clear();
         this._resolvedPredefinedFilepaths.clear();
+
+        // Re-register the built-in predefined after a reset so it is always available.
+        if (this._builtInPredefinedUri !== undefined) {
+            this._resolvedPredefinedFilepaths.add(this._builtInPredefinedUri);
+        }
     }
 
     /**
@@ -203,8 +218,9 @@ export class AnalysisResolver {
     private resolveIncludeAbsolutePaths(record: PartialInspectRecord, predefinedUri: string | undefined): string[] {
         const includeSet = new Set<string>();
 
-        // Add 'as.predefined' to the include-paths
+        // Add built-in Perception predefined first, then 'as.predefined', then any force-included paths.
         const predefinedUriList = [
+            this._builtInPredefinedUri,
             predefinedUri,
             ...getGlobalSettings().forceIncludePredefined.map(uri => resolveIncludeUri(record.uri, uri))
         ];

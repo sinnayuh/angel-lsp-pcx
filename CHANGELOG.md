@@ -1,5 +1,18 @@
 # Change Log
 
+## [Perception Fork]
+
+- Bundled the full Perception AngelScript API (`proc_t`, GUI widgets, render, math, mutex, atomics, networking, JSON, system, Win, engine helpers) as a built-in predefined — no `as.predefined` setup required.
+- Added Perception-specific code snippets (`pcx-main`, `pcx-callback`, `pcx-attach`, `pcx-gui`, `pcx-mutex`, `pcx-esp`, `pcx-w2s`, `pcx-class`, `pcx-rip`).
+- Integrated a multi-file AngelScript bundler with `#include` resolution and circular dependency detection.
+- Added `AngelScript: Bundle Script` and `AngelScript: Bundle Script (Strip Comments)` commands.
+- Added `angelscript-bundle` task type for `.vscode/tasks.json` integration.
+- Pre-build LSP diagnostic check before bundling — warns on existing errors.
+
+Forked and maintained by [@sinnayuh](https://github.com/sinnayuh). Based on [angel-lsp](https://github.com/sashi0034/angel-lsp) by [@sashi0034](https://github.com/sashi0034).
+
+---
+
 ## [0.3.52] 2025/08/17
 
 - Support for `#include` of other `*.as.predefined` files inside `as.predefined`

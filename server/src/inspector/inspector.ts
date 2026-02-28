@@ -1,4 +1,6 @@
 import * as lsp from "vscode-languageserver/node";
+import * as path from "path";
+import {pathToFileURL} from "url";
 import {TokenObject} from "../compiler_tokenizer/tokenObject";
 import {NodeScript} from "../compiler_parser/nodes";
 import {SymbolGlobalScope} from "../compiler_analyzer/symbolScope";
@@ -13,6 +15,19 @@ import {AnalyzerScope} from "../compiler_analyzer/analyzerScope";
 import {TextPosition} from "../compiler_tokenizer/textLocation";
 import {findScopeContainingPosition} from "../service/utils";
 import {moveDiagnosticsByChanges} from "../service/contentChangeApplier";
+
+// Resolve the built-in Perception predefined file from the compiled output directory.
+// At runtime __dirname is server/out/inspector/, so we navigate up to server/out/predefined/.
+function resolveBuiltInPredefinedUri(): string | undefined {
+    try {
+        const filePath = path.resolve(__dirname, '..', 'predefined', 'perception.as.predefined');
+        return pathToFileURL(filePath).toString();
+    } catch {
+        return undefined;
+    }
+}
+
+const s_builtInPredefinedUri = resolveBuiltInPredefinedUri();
 
 interface InspectRecord {
     content: string;
@@ -60,7 +75,8 @@ export class Inspector {
     private readonly _analysisResolver: AnalysisResolver = new AnalysisResolver(
         this._inspectRecords,
         (uri, content) => this.inspectFile(uri, content),
-        (params) => this._diagnosticsCallback(params)
+        (params) => this._diagnosticsCallback(params),
+        s_builtInPredefinedUri
     );
 
     public registerDiagnosticsCallback(callback: DiagnosticsCallback): void {
