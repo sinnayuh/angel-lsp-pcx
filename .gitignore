@@ -10,3 +10,4 @@ CLAUDE.md
 .cursor/
 *.vsix
 .cursorindexingignore
+pcx-docs/

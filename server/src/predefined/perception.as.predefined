@@ -1,1037 +1,622 @@
-// Perception AngelScript API — built-in predefined declarations.
-// This file is automatically loaded by the angel-lsp extension for all .as files.
-// Covers all Perception API modules as of the current documentation.
-// Do NOT place this file in your project — it is embedded inside the extension.
+// Perception AngelScript API declarations.
+// This file is automatically loaded by the angel-lsp-pcx extension for all .as files.
+// Covers all Perception API modules. Do NOT place this file in your project.
+// Reference: https://docs.perception.cx/perception-angel-script-api/angel-script
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CORE ANGELSCRIPT TYPES
+// CORE ANGELSCRIPT ADD-ONS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Dynamic array with value semantics. Use array<T> for all collections.
+funcdef bool __array_less_t(const ? &in a, const ? &in b);
+
 class array<T> {
-    // Returns the number of elements in the array.
+    array();
+    array(uint length);
+    array(uint length, const T &in value);
+    array(const array<T> &in other);
+    array<T> &opAssign(const array<T> &in other);
     uint length() const;
-    // Resizes the array to the specified number of elements.
-    void resize(uint newSize);
-    // Reserves capacity for at least the specified number of elements.
-    void reserve(uint capacity);
-    // Inserts a value at the end of the array.
-    void insertLast(const T &in value);
-    // Inserts a value at the specified index.
-    void insertAt(uint index, const T &in value);
-    // Removes the last element.
-    void removeLast();
-    // Removes the element at the specified index.
-    void removeAt(uint index);
-    // Removes a range of elements starting at index.
-    void removeRange(uint start, uint count);
-    // Reverses the order of elements.
-    void reverse();
-    // Sorts elements in ascending order.
-    void sortAsc();
-    // Sorts a sub-range in ascending order.
-    void sortAsc(uint startAt, uint count);
-    // Sorts elements in descending order.
-    void sortDesc();
-    // Sorts a sub-range in descending order.
-    void sortDesc(uint startAt, uint count);
-    // Returns the index of the first occurrence of value, or -1 if not found.
-    int find(const T &in value) const;
-    // Returns the index of the first occurrence starting at startAt, or -1.
-    int find(uint startAt, const T &in value) const;
-    // Returns the index of the first occurrence by reference, or -1.
-    int findByRef(const T &in value) const;
-}
-
-// Key-value associative map with string keys.
-class dictionary {
-    // Sets a key-value pair. If the key exists, its value is updated.
-    void set(const string &in key, ? &in value);
-    // Sets a 64-bit integer value.
-    void set(const string &in key, int64 &in value);
-    // Sets a double value.
-    void set(const string &in key, double &in value);
-    // Gets the value for a key. Returns false if the key does not exist.
-    bool get(const string &in key, ? &out value) const;
-    // Gets a 64-bit integer value.
-    bool get(const string &in key, int64 &out value) const;
-    // Gets a double value.
-    bool get(const string &in key, double &out value) const;
-    // Returns an array of all keys in the dictionary.
-    array<string> @getKeys() const;
-    // Returns true if the key exists.
-    bool exists(const string &in key) const;
-    // Removes the key and its value. Returns false if not found.
-    bool delete(const string &in key);
-    // Removes all entries.
-    void deleteAll();
-    // Returns true if the dictionary is empty.
+    uint get_length() const;
+    void set_length(uint length);
     bool isEmpty() const;
-    // Returns the number of entries.
-    uint getSize() const;
+    void resize(uint length);
+    void reverse();
+    void insertAt(uint index, const T &in value);
+    void insertAt(uint index, const array<T> &in values);
+    void insertLast(const T &in value);
+    void removeAt(uint index);
+    void removeLast();
+    void removeRange(uint start, uint count);
+    void sortAsc();
+    void sortAsc(uint startAt, uint count);
+    void sortDesc();
+    void sortDesc(uint startAt, uint count);
+    void sort(const __array_less_t &in compareFunc, uint startAt = 0, uint count = uint(-1));
+    int find(const T &in value) const;
+    int find(uint startAt, const T &in value) const;
+    int findByRef(const T &in value) const;
+    int findByRef(uint startAt, const T &in value) const;
+    void clear();
+    T &opIndex(uint index);
+    const T &opIndex(uint index) const;
 }
 
-// Variant type that can hold any value.
+// Built-in string type. The [BuiltinString] metadata enables string literal assignment.
+[BuiltinString]
+class string {
+    string();
+    string(const string &in other);
+    string &opAssign(const string &in other);
+    string &opAssign(double value);
+    string &opAssign(float value);
+    string &opAssign(int64 value);
+    string &opAssign(uint64 value);
+    string &opAssign(bool value);
+    string &opAddAssign(const string &in other);
+    string &opAddAssign(double value);
+    string &opAddAssign(float value);
+    string &opAddAssign(int64 value);
+    string &opAddAssign(uint64 value);
+    string &opAddAssign(bool value);
+    string opAdd(const string &in other) const;
+    string opAdd_r(const string &in other) const;
+    string opAdd(double value) const;
+    string opAdd_r(double value) const;
+    string opAdd(float value) const;
+    string opAdd_r(float value) const;
+    string opAdd(int64 value) const;
+    string opAdd_r(int64 value) const;
+    string opAdd(uint64 value) const;
+    string opAdd_r(uint64 value) const;
+    string opAdd(bool value) const;
+    string opAdd_r(bool value) const;
+    bool opEquals(const string &in other) const;
+    int opCmp(const string &in other) const;
+    bool isEmpty() const;
+    uint length() const;
+    uint get_length() const;
+    void set_length(uint length);
+    uint8 &opIndex(uint index);
+    const uint8 &opIndex(uint index) const;
+    void resize(uint length);
+    string substr(uint start = 0, int count = -1) const;
+    int findFirst(const string &in text, uint start = 0) const;
+    int findFirstOf(const string &in chars, uint start = 0) const;
+    int findFirstNotOf(const string &in chars, uint start = 0) const;
+    int findLast(const string &in text, int start = -1) const;
+    int findLastOf(const string &in chars, int start = -1) const;
+    int findLastNotOf(const string &in chars, int start = -1) const;
+    void insert(uint pos, const string &in text);
+    void erase(uint pos, int count = -1);
+    array<string>@ split(const string &in delim) const;
+}
+
 class any {
     any();
+    any(const any &in other);
     any(? &in value);
     any(int64 &in value);
     any(double &in value);
-    // Assigns the contained value from another any object.
     any &opAssign(const any &in other);
-    // Stores a value inside this any object.
     void store(? &in value);
     void store(int64 &in value);
     void store(double &in value);
-    // Retrieves the stored value. Returns true if compatible.
     bool retrieve(? &out value) const;
     bool retrieve(int64 &out value) const;
     bool retrieve(double &out value) const;
 }
 
+class dictionaryValue {
+    dictionaryValue();
+    dictionaryValue(const dictionaryValue &in other);
+    dictionaryValue &opAssign(const dictionaryValue &in other);
+    dictionaryValue &opAssign(const ? &in value);
+    dictionaryValue &opAssign(int64 value);
+    dictionaryValue &opAssign(double value);
+    void opCast(? &out value) const;
+    void opConv(? &out value) const;
+    int64 opConv() const;
+    double opConv() const;
+}
+
+class dictionary {
+    dictionary();
+    dictionary(const dictionary &in other);
+    dictionary &opAssign(const dictionary &in other);
+    void set(const string &in key, const ? &in value);
+    void set(const string &in key, int64 value);
+    void set(const string &in key, double value);
+    bool get(const string &in key, ? &out value) const;
+    bool get(const string &in key, int64 &out value) const;
+    bool get(const string &in key, double &out value) const;
+    bool exists(const string &in key) const;
+    bool isEmpty() const;
+    uint getSize() const;
+    bool delete(const string &in key);
+    void deleteAll();
+    array<string>@ getKeys() const;
+    dictionaryValue &opIndex(const string &in key);
+    const dictionaryValue &opIndex(const string &in key) const;
+}
+
+class grid<T> {
+    grid();
+    grid(uint width, uint height);
+    grid(uint width, uint height, const T &in value);
+    grid(const grid<T> &in other);
+    grid<T> &opAssign(const grid<T> &in other);
+    uint width() const;
+    uint height() const;
+    bool isEmpty() const;
+    void resize(uint width, uint height);
+    void resize(uint width, uint height, const T &in value);
+    void clear();
+    T &opIndex(uint x, uint y);
+    const T &opIndex(uint x, uint y) const;
+}
+
+void set_exception(const string &in message);
+
 // ─────────────────────────────────────────────────────────────────────────────
-// FUNCDEF TYPES
+// STRING FORMATTING
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Callback signature for register_callback. Receives the callback ID and data index.
+// fmt: "d" decimal, "h" hex lowercase, "H" hex uppercase, "o" octal, "b" binary.
+string formatInt(int64 value, const string &in options = "", uint width = 0);
+string formatUInt(uint64 value, const string &in options = "", uint width = 0);
+// fmt: "f" fixed, "e" scientific, "g" general.
+string formatFloat(double value, const string &in options = "", uint width = 0, uint precision = 0);
+int64 parseInt(const string &in value, uint base = 10, uint &out byteCount = 0);
+uint64 parseUInt(const string &in value, uint base = 10, uint &out byteCount = 0);
+double parseFloat(const string &in value, uint &out byteCount = 0);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STANDARD MATH
+// ─────────────────────────────────────────────────────────────────────────────
+
+double abs(double x);
+float abs(float x);
+int abs(int x);
+int64 abs(int64 x);
+double cos(double x);
+float cos(float x);
+double sin(double x);
+float sin(float x);
+double tan(double x);
+float tan(float x);
+double acos(double x);
+float acos(float x);
+double asin(double x);
+float asin(float x);
+double atan(double x);
+float atan(float x);
+double atan2(double y, double x);
+float atan2(float y, float x);
+double log(double x);
+float log(float x);
+double log10(double x);
+float log10(float x);
+double pow(double x, double y);
+float pow(float x, float y);
+double sqrt(double x);
+float sqrt(float x);
+double ceil(double x);
+float ceil(float x);
+double floor(double x);
+float floor(float x);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THREADING & CALLBACKS
+// ─────────────────────────────────────────────────────────────────────────────
+
 funcdef void CallbackFn(int callback_id, int data_index);
-
-// Callback signature for GUI button click handlers.
 funcdef void ButtonFn();
+funcdef bool UcHookFn(uint64 uc, uint64 addr);
+
+// Registers a recurring callback running every every_ms milliseconds.
+int register_callback(const CallbackFn@ fn, int every_ms, int data_index);
+void unregister_callback(int id);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROC API
+// LOGGING
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Handle to an external Windows process. Used for all memory read/write operations.
-// Obtain via ref_process(). Release with deref() when done.
-class proc_t {
-    // ── Unsigned integer reads ──────────────────────────────────────────────
-    // Reads an unsigned 8-bit integer from addr.
-    uint8  ru8(uint64 addr) const;
-    // Reads an unsigned 16-bit integer from addr.
-    uint16 ru16(uint64 addr) const;
-    // Reads an unsigned 32-bit integer from addr.
-    uint32 ru32(uint64 addr) const;
-    // Reads an unsigned 64-bit integer from addr.
-    uint64 ru64(uint64 addr) const;
-
-    // ── Signed integer reads ────────────────────────────────────────────────
-    // Reads a signed 8-bit integer from addr.
-    int8   r8(uint64 addr) const;
-    // Reads a signed 16-bit integer from addr.
-    int16  r16(uint64 addr) const;
-    // Reads a signed 32-bit integer from addr.
-    int32  r32(uint64 addr) const;
-    // Reads a signed 64-bit integer from addr.
-    int64  r64(uint64 addr) const;
-
-    // ── Float / string / bulk reads ─────────────────────────────────────────
-    // Reads a 32-bit float from addr.
-    float  rf32(uint64 addr) const;
-    // Reads a 64-bit double from addr.
-    double rf64(uint64 addr) const;
-    // Reads an ANSI/UTF-8 string from addr, up to max_chars characters.
-    string rs(uint64 addr, int max_chars) const;
-    // Reads a UTF-16 wide string from addr and converts to UTF-8.
-    string rws(uint64 addr, int max_chars) const;
-    // Reads size bytes from addr into out_buf.
-    void   rvm(uint64 addr, uint size, array<uint8> &out out_buf);
-
-    // ── Signed integer writes ───────────────────────────────────────────────
-    // Writes a signed 8-bit integer to addr.
-    bool w8(uint64 addr, int8 v);
-    // Writes a signed 16-bit integer to addr.
-    bool w16(uint64 addr, int16 v);
-    // Writes a signed 32-bit integer to addr.
-    bool w32(uint64 addr, int32 v);
-    // Writes a signed 64-bit integer to addr.
-    bool w64(uint64 addr, int64 v);
-    // Writes a 32-bit float to addr.
-    bool wf32(uint64 addr, float v);
-    // Writes a 64-bit double to addr.
-    bool wf64(uint64 addr, double v);
-    // Writes the bytes in in_buf to addr. Returns true on success.
-    bool wvm(uint64 addr, const array<uint8> &in in_buf);
-
-    // ── Process information ─────────────────────────────────────────────────
-    // Returns the image base address (module base) of the process.
-    uint64 base_address() const;
-    // Returns the address of the process PEB (Process Environment Block).
-    uint64 peb() const;
-    // Returns the Windows process ID.
-    uint   pid() const;
-    // Returns true if the process is currently alive and running.
-    bool   alive() const;
-
-    // ── Module and export resolution ────────────────────────────────────────
-    // Looks up a module by name. Returns true and fills base/size on success.
-    bool   get_module(const string &in name, uint64 &out module_base, uint64 &out module_size);
-    // Returns the address of an exported symbol in the given module. Returns 0 if not found.
-    uint64 get_proc_address(uint64 module_base, const string &in export_name) const;
-
-    // ── Pattern scanning ────────────────────────────────────────────────────
-    // Scans [search_start, search_start+search_size) for the first match of signature.
-    // Signature format: "48 8B ?? ?? ?? 89" — use ?? for wildcards.
-    uint64 find_code_pattern(uint64 search_start, uint64 search_size, const string &in signature);
-    // Scans for all matches of signature and fills result with their addresses.
-    void   find_all_code_patterns(uint64 search_start, uint64 search_size,
-                                  const string &in signature, array<uint64> &out result);
-
-    // ── Thread information ──────────────────────────────────────────────────
-    // Returns TEB addresses for all threads in the target process.
-    array<uint64>@ get_all_tebs() const;
-
-    // ── CS2-specific extensions ─────────────────────────────────────────────
-    // Resolves a CreateInterface-style interface exported by a CS2 module.
-    uint64 cs2_get_interface(uint64 module_base, const string &in name) const;
-    // Returns a dump of all Schema fields from CS2's client.dll.
-    array<dictionary@>@ cs2_get_schema_dump() const;
-
-    // ── Handle management ───────────────────────────────────────────────────
-    // Releases the process handle. Call when you no longer need the process.
-    void deref();
-}
-
-// Opens a handle to a process by executable name (e.g. "game.exe").
-// Returns a proc_t with pid() == 0 if not found.
-proc_t ref_process(const string &in name);
-
-// Opens a handle to a process by Windows PID.
-// Returns a proc_t with pid() == 0 if not found.
-proc_t ref_process(uint pid);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EXTENDED MATH API
-// ─────────────────────────────────────────────────────────────────────────────
-
-// 2D double-precision vector.
-class vector2 {
-    double x;
-    double y;
-
-    vector2();
-    vector2(double x, double y);
-
-    // Returns the length (magnitude) of this vector.
-    double length() const;
-    // Returns the distance to another vector.
-    double distance(const vector2 &in other) const;
-    // Alias for distance().
-    double distance_to(const vector2 &in other) const;
-    // Returns a linearly interpolated vector. t=0 returns this, t=1 returns other.
-    vector2 lerp(const vector2 &in other, double t) const;
-    // Returns the component-wise minimum.
-    vector2 min(const vector2 &in other) const;
-    // Returns the component-wise maximum.
-    vector2 max(const vector2 &in other) const;
-    // Returns the dot product.
-    double dot(const vector2 &in other) const;
-    // Returns the normalized (unit-length) vector.
-    vector2 normalized() const;
-
-    vector2 opAdd(const vector2 &in) const;
-    vector2 opSub(const vector2 &in) const;
-    vector2 opMul(double) const;
-    vector2 opDiv(double) const;
-    bool    opEquals(const vector2 &in) const;
-}
-
-// 3D double-precision vector.
-class vector3 {
-    double x;
-    double y;
-    double z;
-
-    vector3();
-    vector3(double x, double y, double z);
-
-    // Returns the 3D length of this vector.
-    double length() const;
-    // Returns the 2D (XY) length of this vector.
-    double length2d() const;
-    // Returns the 3D distance to another vector.
-    double distance(const vector3 &in other) const;
-    // Returns the 2D (XY plane) distance to another vector.
-    double distance2d(const vector3 &in other) const;
-    // Alias for distance().
-    double distance_to(const vector3 &in other) const;
-    // Alias for distance2d().
-    double distance2d_to(const vector3 &in other) const;
-    // Returns a linearly interpolated vector. t=0 returns this, t=1 returns other.
-    vector3 lerp(const vector3 &in other, double t) const;
-    // Returns the component-wise minimum.
-    vector3 min(const vector3 &in other) const;
-    // Returns the component-wise maximum.
-    vector3 max(const vector3 &in other) const;
-    // Returns the dot product.
-    double  dot_product(const vector3 &in other) const;
-    // Returns the cross product.
-    vector3 cross_product(const vector3 &in other) const;
-    // Returns the normalized (unit-length) vector.
-    vector3 normalized() const;
-
-    // Reads 3 consecutive floats from addr into x, y, z.
-    void readas_float(proc_t &in proc, uint64 addr);
-    // Reads 3 consecutive doubles from addr into x, y, z.
-    void readas_double(proc_t &in proc, uint64 addr);
-    // Writes x, y, z as 3 consecutive floats to addr. Returns true on success.
-    bool writeas_float(proc_t &in proc, uint64 addr) const;
-    // Writes x, y, z as 3 consecutive doubles to addr. Returns true on success.
-    bool writeas_double(proc_t &in proc, uint64 addr) const;
-
-    vector3 opAdd(const vector3 &in) const;
-    vector3 opSub(const vector3 &in) const;
-    vector3 opMul(double) const;
-    vector3 opDiv(double) const;
-    bool    opEquals(const vector3 &in) const;
-}
-
-// 4D double-precision quaternion (x, y, z, w).
-class quaternion {
-    double x;
-    double y;
-    double z;
-    double w;
-
-    quaternion();
-    quaternion(double x, double y, double z, double w);
-
-    // Returns the length (magnitude) of this quaternion.
-    double     length() const;
-    // Returns the normalized (unit) quaternion.
-    quaternion normalized() const;
-    // Returns the dot product with another quaternion.
-    double     dot(const quaternion &in other) const;
-    // Returns the conjugate of this quaternion.
-    quaternion conjugate() const;
-    // Returns the inverse of this quaternion.
-    quaternion inverse() const;
-    // Extracts Euler angles (in degrees) from this quaternion.
-    void       to_euler(double &out pitch, double &out yaw, double &out roll) const;
-    // Rotates vector v by this quaternion and returns the result.
-    vector3    rotate(const vector3 &in v) const;
-
-    quaternion opMul(const quaternion &in) const;
-    bool       opEquals(const quaternion &in) const;
-}
-
-// 4×4 double-precision matrix. Row-major storage internally.
-// Access elements with mat[index] (linear) or mat[row][col] (2D indexing).
-class matrix4x4 {
-    // Reads 16 consecutive floats from addr into this matrix.
-    void readas_float(proc_t &in proc, uint64 addr);
-    // Reads 16 consecutive doubles from addr into this matrix.
-    void readas_double(proc_t &in proc, uint64 addr);
-    // Writes this matrix as 16 consecutive floats to addr. Returns true on success.
-    bool writeas_float(proc_t &in proc, uint64 addr) const;
-    // Writes this matrix as 16 consecutive doubles to addr. Returns true on success.
-    bool writeas_double(proc_t &in proc, uint64 addr) const;
-    // Transforms vector v by this matrix (applies rotation and translation).
-    vector3 transform(const vector3 &in v) const;
-
-    matrix4x4 opMul(const matrix4x4 &in) const;
-}
-
-// Creates a quaternion from Euler angles (pitch, yaw, roll in degrees).
-quaternion quat_from_euler(double pitch, double yaw, double roll);
-
-// Creates a translation matrix.
-matrix4x4 mat4_translate(double x, double y, double z);
-
-// Creates a scale matrix.
-matrix4x4 mat4_scale(double x, double y, double z);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MUTEX API
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Thread synchronization mutex. Create with create_mutex().
-class mutex_t {
-    // Acquires an exclusive write lock. Blocks until available.
-    void lock();
-    // Releases the exclusive lock.
-    void unlock();
-    // Acquires a shared read lock. Multiple readers can hold it simultaneously.
-    void lock_shared();
-    // Releases the shared read lock.
-    void unlock_shared();
-    // Tries to acquire an exclusive lock without blocking. Returns true on success.
-    bool try_lock();
-    // Tries to acquire a shared lock without blocking. Returns true on success.
-    bool try_lock_shared();
-    // Destroys the mutex and releases OS resources. Call in on_unload().
-    void destroy();
-}
-
-// Creates and registers a new mutex with the current script context.
-mutex_t create_mutex();
+void log(const string &in message);
+void log_error(const string &in message);
+void log_console(const string &in message);
+void log_console_error(const string &in message);
+string get_username();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ATOMIC TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Thread-safe 32-bit signed integer. Lock-free operations.
 class atomic_int32 {
-    // Atomically loads and returns the current value.
-    int32 load();
-    // Atomically stores a new value.
-    void  store(int32 value);
-    // Atomically replaces the value with desired and returns the old value.
-    int32 exchange(int32 desired);
-    // If current value == expected, stores desired and returns true. Otherwise false.
-    bool  compare_exchange(int32 expected, int32 desired);
-    // Atomically adds v. Returns the previous value.
+    atomic_int32();
+    atomic_int32(int32 v);
+    atomic_int32(const atomic_int32 &in other);
+    atomic_int32 &opAssign(const atomic_int32 &in other);
+    int32 load() const;
+    void store(int32 v);
+    int32 exchange(int32 v);
+    bool compare_exchange(int32 expected, int32 desired);
     int32 add(int32 v);
-    // Atomically subtracts v. Returns the previous value.
     int32 sub(int32 v);
-    // Atomically increments by 1. Returns the new value.
-    int32 increment();
-    // Atomically decrements by 1. Returns the new value.
-    int32 decrement();
-    // Atomically performs bitwise AND with v. Returns the previous value.
     int32 and_op(int32 v);
-    // Atomically performs bitwise OR with v. Returns the previous value.
     int32 or_op(int32 v);
-    // Atomically performs bitwise XOR with v. Returns the previous value.
     int32 xor_op(int32 v);
+    int32 increment();
+    int32 decrement();
 }
 
-// Thread-safe 64-bit signed integer. Lock-free operations.
 class atomic_int64 {
-    // Atomically loads and returns the current value.
-    int64 load();
-    // Atomically stores a new value.
-    void  store(int64 value);
-    // Atomically replaces the value with desired and returns the old value.
-    int64 exchange(int64 desired);
-    // If current value == expected, stores desired and returns true. Otherwise false.
-    bool  compare_exchange(int64 expected, int64 desired);
-    // Atomically adds v. Returns the previous value.
+    atomic_int64();
+    atomic_int64(int64 v);
+    atomic_int64(const atomic_int64 &in other);
+    atomic_int64 &opAssign(const atomic_int64 &in other);
+    int64 load() const;
+    void store(int64 v);
+    int64 exchange(int64 v);
+    bool compare_exchange(int64 expected, int64 desired);
     int64 add(int64 v);
-    // Atomically subtracts v. Returns the previous value.
     int64 sub(int64 v);
-    // Atomically increments by 1. Returns the new value.
-    int64 increment();
-    // Atomically decrements by 1. Returns the new value.
-    int64 decrement();
-    // Atomically performs bitwise AND with v. Returns the previous value.
     int64 and_op(int64 v);
-    // Atomically performs bitwise OR with v. Returns the previous value.
     int64 or_op(int64 v);
-    // Atomically performs bitwise XOR with v. Returns the previous value.
     int64 xor_op(int64 v);
+    int64 increment();
+    int64 decrement();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROC API
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Handle to an external Windows process. Obtain via ref_process(). Release with deref().
+class proc_t {
+    void deref();
+
+    uint64 base_address() const;
+    uint64 peb() const;
+    uint pid() const;
+    bool alive() const;
+
+    // ── Unsigned reads ──────────────────────────────────────────────────────
+    uint8  ru8(uint64 addr) const;
+    uint16 ru16(uint64 addr) const;
+    uint32 ru32(uint64 addr) const;
+    uint64 ru64(uint64 addr) const;
+
+    // ── Signed reads ────────────────────────────────────────────────────────
+    int8  r8(uint64 addr) const;
+    int16 r16(uint64 addr) const;
+    int32 r32(uint64 addr) const;
+    int64 r64(uint64 addr) const;
+
+    // ── Float reads ─────────────────────────────────────────────────────────
+    float  rf32(uint64 addr) const;
+    double rf64(uint64 addr) const;
+
+    // ── Unsigned writes ─────────────────────────────────────────────────────
+    bool wu8(uint64 addr, uint8 v);
+    bool wu16(uint64 addr, uint16 v);
+    bool wu32(uint64 addr, uint32 v);
+    bool wu64(uint64 addr, uint64 v);
+
+    // ── Signed writes ───────────────────────────────────────────────────────
+    bool w8(uint64 addr, int8 v);
+    bool w16(uint64 addr, int16 v);
+    bool w32(uint64 addr, int32 v);
+    bool w64(uint64 addr, int64 v);
+
+    // ── Float writes ────────────────────────────────────────────────────────
+    bool wf32(uint64 addr, float v);
+    bool wf64(uint64 addr, double v);
+
+    // ── String reads/writes ─────────────────────────────────────────────────
+    string rs(uint64 addr, int max_chars) const;
+    string rws(uint64 addr, int max_chars) const;
+    bool ws(uint64 addr, const string &in text);
+    bool wws(uint64 addr, const string &in text);
+
+    // ── Bulk reads/writes ───────────────────────────────────────────────────
+    void rvm(uint64 addr, uint size, array<uint8> &out out_buf);
+    bool wvm(uint64 addr, const array<uint8> &in in_buf);
+
+    void r128(uint64 addr, array<uint8> &out out16) const;
+    void r256(uint64 addr, array<uint8> &out out32) const;
+    void r512(uint64 addr, array<uint8> &out out64) const;
+    bool w128(uint64 addr, const array<uint8> &in in16);
+    bool w256(uint64 addr, const array<uint8> &in in32);
+    bool w512(uint64 addr, const array<uint8> &in in64);
+
+    // ── Module & pattern scanning ───────────────────────────────────────────
+    bool get_module(const string &in name, uint64 &out module_base, uint64 &out module_size) const;
+    uint64 find_code_pattern(uint64 search_start, uint64 search_size, const string &in signature) const;
+    void find_all_code_patterns(uint64 search_start, uint64 search_size, const string &in signature, array<uint64> &out result) const;
+
+    // ── Advanced memory ─────────────────────────────────────────────────────
+    array<uint64>@ get_all_tebs() const;
+    array<uint64>@ read_pointer_array(uint64 base, uint count, int offset_delta) const;
+    bool read_struct(uint64 addr, dictionary &out result, const dictionary &in desc) const;
+    bool read_struct_array(uint64 base, uint count, uint size, array<dictionary>@ &out result, const dictionary &in desc) const;
+    uint64 alloc_vm(uint size);
+    bool free_vm(uint64 address);
+    uint64 get_proc_address(uint64 module_base, const string &in export_name) const;
+    uint64 get_import_rdata_address(uint64 module_base, const string &in import_name) const;
+    bool virtual_query(uint64 address, uint64 &out region_start, uint64 &out region_size, uint32 &out protection, bool &out heap_likely) const;
+    void get_vad_snapshot(bool heap_likely_only, array<dictionary>@ &out regions) const;
+    void scan_bytes(const array<uint8> &in pattern, array<uint64> &out result, bool heap_likely_only) const;
+    void scan_all_bytes(array<uint64> &out result, bool heap_likely_only) const;
+    void scan_u32(uint32 value, array<uint64> &out result, bool heap_likely_only) const;
+    void scan_u64(uint64 value, array<uint64> &out result, bool heap_likely_only) const;
+    void scan_all_u32(array<uint64> &out result, bool heap_likely_only) const;
+    void scan_all_u64(array<uint64> &out result, bool heap_likely_only) const;
+
+    // ── Game-specific helpers ────────────────────────────────────────────────
+    uint64 cs2_get_interface(uint64 module_base, const string &in name) const;
+    array<dictionary@>@ cs2_get_schema_dump() const;
+}
+
+proc_t ref_process();
+proc_t ref_process(uint pid);
+proc_t ref_process(const string &in name);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MUTEX API
+// ─────────────────────────────────────────────────────────────────────────────
+
+class mutex_t {
+    void destroy();
+    void lock();
+    bool try_lock();
+    void unlock();
+    void lock_shared();
+    bool try_lock_shared();
+    void unlock_shared();
+}
+
+mutex_t create_mutex();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GUI API
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Checkbox widget. Holds a boolean on/off state.
-class checkbox_t {
-    // Returns the current checked state.
-    bool get() const;
-    // Sets the checked state programmatically.
-    void set(bool value);
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// Floating-point (double) slider widget.
-class slider_double_t {
-    // Returns the current slider value.
-    double get() const;
-    // Sets the slider value programmatically.
-    void   set(double value);
-    // Shows or hides this element in the UI.
-    void   set_active(bool active);
-}
-
-// Integer slider widget.
-class slider_int_t {
-    // Returns the current slider value.
-    int  get() const;
-    // Sets the slider value programmatically.
-    void set(int value);
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// Text input widget.
-class input_t {
-    // Returns the current text value.
-    string get() const;
-    // Sets the text value programmatically.
-    void   set(const string &in value);
-    // Shows or hides this element in the UI.
-    void   set_active(bool active);
-}
-
-// Clickable button widget with a script callback.
-class button_t {
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// Single-selection dropdown/radio list.
-class single_select_t {
-    // Returns the index of the currently selected option (0-based).
-    int  get() const;
-    // Sets the selected option by index (0-based).
-    void set(int index);
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// Multi-selection list widget.
-class multi_select_t {
-    // Returns true if the option at index is currently selected.
-    bool get(int index) const;
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// RGBA color picker widget.
-class color_picker_t {
-    // Reads the current RGBA color values (0-255 each).
-    void get(uint8 &out r, uint8 &out g, uint8 &out b, uint8 &out a) const;
-    // Sets the RGBA color values (0-255 each).
-    void set(uint8 r, uint8 g, uint8 b, uint8 a);
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// Keybind widget. Lets the user bind a virtual key code.
-class keybind_t {
-    // Returns the currently bound virtual key code, or 0 if unbound.
-    int  get() const;
-    // Shows or hides this element in the UI.
-    void set_active(bool active);
-}
-
-// 2-column list widget with per-row highlight, hide, and show.
-class list_t {
-    // Returns the index of the currently selected row (-1 if none).
-    int  get() const;
-    // Returns the total number of rows.
-    int  get_count() const;
-    // Clears all rows from the list.
-    void clear();
-    // Appends a row with two info columns.
-    void append(const string &in info1, const string &in info2);
-    // Removes the row at the given index (0-based).
-    void remove(int index) const;
-    // Highlights the row at the given index.
-    void highlight(int index) const;
-    // Removes the highlight from the row at the given index.
-    void remove_highlight(int index) const;
-    // Hides the row at the given index.
-    void hide(int index) const;
-    // Shows (un-hides) the row at the given index.
-    void show(int index) const;
-    // Shows or hides the entire list widget.
-    void set_active(bool active);
-}
-
-// Panel inside a subtab. All UI elements are added to a panel.
 class panel_t {
-    // Adds a checkbox. default_value is the initial checked state.
-    checkbox_t      add_checkbox(const string &in name, bool default_value,
-                                 bool find_protect = false);
-    // Adds a double-precision slider.
-    // postfix: unit label shown after the value (e.g. "m", "°", "").
-    slider_double_t add_slider_double(const string &in name, const string &in postfix,
-                                      double value, double minv, double maxv, double step,
-                                      bool draw_title = true, bool find_protect = false);
-    // Adds an integer slider.
-    slider_int_t    add_slider_int(const string &in name, const string &in postfix,
-                                   int value, int minv, int maxv, int step,
-                                   bool draw_title = true, bool find_protect = false);
-    // Adds a text input box.
-    input_t         add_input(const string &in name, const string &in default_value,
-                              bool find_protect = false);
-    // Adds a clickable button. callback is called when the button is clicked.
-    button_t        add_button(const string &in name, ButtonFn@ callback);
-    // Adds a single-selection dropdown. options is an array of choice labels.
-    single_select_t add_single_select(const string &in name, const array<string> &in options,
-                                      int default_index, bool find_protect = false);
-    // Adds a multi-selection list. options is an array of choice labels.
-    multi_select_t  add_multi_select(const string &in name, const array<string> &in options,
-                                     bool find_protect = false);
-    // Adds an RGBA color picker. Values are 0-255.
-    color_picker_t  add_color(const string &in name,
-                              uint8 r, uint8 g, uint8 b, uint8 a,
-                              bool find_protect = false);
-    // Adds a keybind selector (must be placed immediately after a checkbox).
-    keybind_t       add_keybind(const string &in name, bool find_protect = false);
-    // Adds a 2-column list. members is an array of dictionaries with "info1" and "info2" keys.
-    list_t          add_list(const string &in name, const array<dictionary@> &in members);
-    // Shows or hides this panel.
+    checkbox_t     add_checkbox(const string &in name, bool initial, bool draw_title = true, bool find_protect = false, bool draw_just_label = false);
+    keybind_t      add_keybind(const string &in name, int key, const string &in mode, bool draw_title = true, bool find_protect = false);
+    color_picker_t add_color(const string &in name, const array<float> &in rgba, bool find_protect = false);
+    slider_double_t add_slider_double(const string &in name, const string &in postfix, double value, double minv, double maxv, double step, bool draw_title = true, bool find_protect = false);
+    slider_int_t   add_slider_int(const string &in name, const string &in postfix, int value, int minv, int maxv, int step, bool draw_title = true, bool find_protect = false);
+    input_t        add_input(const string &in name, const string &in initial, bool draw_title = true, bool find_protect = false);
+    list_t         add_list(const string &in name, const array<dictionary@> &in members, bool draw_title = true, bool find_protect = false);
+    multi_select_t add_multi_select(const string &in name, const array<dictionary@> &in options, bool is_expandable, bool draw_title = true, bool find_protect = false);
+    single_select_t add_single_select(const string &in name, const array<string> &in options, int initial_index, bool is_expandable, bool draw_title = true, bool find_protect = false);
+    button_t       add_button(const string &in name, ButtonFn@ cb, bool find_protect = false);
     void set_active(bool active);
 }
 
-// Subtab inside one of the main UI tabs (0–4).
 class subtab_t {
-    // Adds a panel to this subtab. is_small=true for compact layout, false for large.
     panel_t add_panel(const string &in name, bool is_small);
-    // Returns true if this handle is valid (use for error-checking in main()).
     bool is_valid() const;
-    // Shows or hides this subtab.
     void set_active(bool active);
 }
 
-// Creates a subtab under one of the fixed top-level tabs (0–4).
+class checkbox_t      { bool get() const; void set(bool v); void set_active(bool active); }
+class keybind_t       { void get(int &out key, string &out mode) const; void set(int key, const string &in mode); void set_active(bool active); bool is_pressed() const; }
+class color_picker_t  { void get(array<float> &out rgba) const; void set(const array<float> &in rgba); void set_active(bool active); }
+class slider_double_t { double get() const; void set(double v); void set_active(bool active); }
+class slider_int_t    { int get() const; void set(int v); void set_active(bool active); }
+class input_t         { string get() const; void set(const string &in v); void set_active(bool active); }
+class list_t          { int get() const; int get_count() const; void clear(); void append(const string &in info1, const string &in info2); void set_active(bool active); void remove(int index) const; void highlight(int index) const; void remove_highlight(int index) const; void hide(int index) const; void show(int index) const; }
+class multi_select_t  { void get(array<bool> &out states) const; void set(int index, bool state); void set_active(bool active); }
+class single_select_t { int get() const; void set(int index); void set_active(bool active); }
+class button_t        { void set_active(bool active); }
+
 subtab_t create_subtab(int parent_tab, const string &in name);
 
-// Returns the position of the main GUI window in screen coordinates.
+checkbox_t      find_checkbox(int tab, const string &in subtab, const string &in panel, const string &in name);
+slider_double_t find_slider_double(int tab, const string &in subtab, const string &in panel, const string &in name);
+slider_int_t    find_slider_int(int tab, const string &in subtab, const string &in panel, const string &in name);
+input_t         find_input(int tab, const string &in subtab, const string &in panel, const string &in name);
+multi_select_t  find_multi_select(int tab, const string &in subtab, const string &in panel, const string &in name);
+single_select_t find_single_select(int tab, const string &in subtab, const string &in panel, const string &in name);
+keybind_t       find_keybind(int tab, const string &in subtab, const string &in panel, const string &in name);
+button_t        find_button(int tab, const string &in subtab, const string &in panel, const string &in name);
+color_picker_t  find_color(int tab, const string &in subtab, const string &in panel, const string &in name);
+list_t          find_list(int tab, const string &in subtab, const string &in panel, const string &in name);
+
+bool gui_active();
 void get_gui_position(float &out x, float &out y);
-// Returns the size of the main GUI window in pixels.
 void get_gui_size(float &out w, float &out h);
-
-// Finds a named checkbox element by path. Returns invalid handle (0) if not found.
-checkbox_t      find_checkbox(int tab, const string &in subtab,
-                              const string &in panel, const string &in name);
-// Finds a named double slider element by path.
-slider_double_t find_slider_double(int tab, const string &in subtab,
-                                   const string &in panel, const string &in name);
-// Finds a named integer slider element by path.
-slider_int_t    find_slider_int(int tab, const string &in subtab,
-                                const string &in panel, const string &in name);
-// Finds a named input box element by path.
-input_t         find_input(int tab, const string &in subtab,
-                           const string &in panel, const string &in name);
-// Finds a named multi-select element by path.
-multi_select_t  find_multi_select(int tab, const string &in subtab,
-                                  const string &in panel, const string &in name);
-// Finds a named single-select element by path.
-single_select_t find_single_select(int tab, const string &in subtab,
-                                   const string &in panel, const string &in name);
-// Finds a named keybind element by path.
-keybind_t       find_keybind(int tab, const string &in subtab,
-                             const string &in panel, const string &in name);
-// Finds a named button element by path.
-button_t        find_button(int tab, const string &in subtab,
-                            const string &in panel, const string &in name);
-// Finds a named color picker element by path.
-color_picker_t  find_color(int tab, const string &in subtab,
-                           const string &in panel, const string &in name);
-// Finds a named list element by path.
-list_t          find_list(int tab, const string &in subtab,
-                          const string &in panel, const string &in name);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NET API
-// ─────────────────────────────────────────────────────────────────────────────
-
-// WebSocket connection handle. Obtain via ws_connect().
-class ws_t {
-    // Returns true if the socket is currently open.
-    bool is_open();
-    // Sends a UTF-8 text message. Returns true on success.
-    bool send_text(const string &in message);
-    // Sends raw binary data. Returns true on success.
-    bool send_binary(const array<uint8> &in data);
-    // Sends a dictionary as a JSON message. Returns true on success.
-    bool send_json(const dictionary &in value);
-    // Blocking receive. Fills msg and is_text. Returns false if socket closed.
-    bool recv(string &out msg, bool &out is_text);
-    // Non-blocking receive. Returns false if no message and is_closed is set when closed.
-    bool poll(string &out msg, bool &out is_text, bool &out is_closed);
-    // Closes the WebSocket connection. code defaults to normal closure.
-    void close(int code = 0);
-}
-
-// Opens a WebSocket connection to url. Blocks up to timeout_ms (0 = default timeout).
-ws_t ws_connect(const string &in url, uint timeout_ms = 0);
-
-// Performs a synchronous HTTP/HTTPS GET request.
-// Returns true on transport success. status_code = HTTP status, body = response.
-bool net_http_get(const string &in url, uint &out status_code,
-                  string &out body, uint timeout_ms = 0);
-
-// Performs a synchronous HTTP/HTTPS POST request.
-// content_type: MIME type e.g. "application/json".
-// Returns true on transport success. status_code = HTTP status, response = body.
-bool net_http_post(const string &in url, const string &in content_type,
-                   const string &in body, uint &out status_code,
-                   string &out response, uint timeout_ms = 0);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ENGINE — LIFECYCLE AND CALLBACKS
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Registers a recurring callback that runs in its own thread every every_ms milliseconds.
-// fn: the callback function. data_index: user integer forwarded to each invocation.
-// Returns a unique callback ID, or 0 on failure.
-int  register_callback(const CallbackFn@ fn, int every_ms, int data_index);
-
-// Stops a previously registered callback and terminates its thread.
-void unregister_callback(int id);
-
-// Displays an informational message in the UI log overlay.
-void log(const string &in message);
-
-// Displays an error message in the UI log overlay and raises an exception.
-void log_error(const string &in message);
-
-// Writes a message to the debug console (persistent until cleared).
-void log_console(const string &in message);
-
-// Writes an error message to the debug console in red and raises an exception.
-void log_console_error(const string &in message);
+string construct_config();
+void apply_config(const string &in cfg);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RENDER API
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Text effect: no effect.
-const int TE_NONE    = 0;
-// Text effect: pixel outline drawn around text.
-const int TE_OUTLINE = 1;
-// Text effect: drop shadow below text.
-const int TE_SHADOW  = 2;
-// Text effect: soft glow around text.
-const int TE_GLOW    = 3;
+enum RenderRoundingFlags { RR_TOP_LEFT, RR_TOP_RIGHT, RR_BOTTOM_LEFT, RR_BOTTOM_RIGHT, RR_ALL }
+enum RenderTextEffect    { TE_NONE, TE_OUTLINE, TE_SHADOW, TE_GLOW }
 
-// Rounding flag: top-left corner.
-const int RR_TOP_LEFT     = 1;
-// Rounding flag: top-right corner.
-const int RR_TOP_RIGHT    = 2;
-// Rounding flag: bottom-left corner.
-const int RR_BOTTOM_LEFT  = 4;
-// Rounding flag: bottom-right corner.
-const int RR_BOTTOM_RIGHT = 8;
-// Rounding flag: all corners.
-const int RR_ALL          = 15;
+void get_view(float &out w, float &out h);
+float get_view_scale();
+double get_fps();
 
-// Draws text at (x, y).
-// effect: one of TE_NONE, TE_OUTLINE, TE_SHADOW, TE_GLOW.
-// er,eg,eb,ea: effect color. effect_amount: effect intensity.
-void draw_text(const string &in text, float x, float y,
-               uint8 r, uint8 g, uint8 b, uint8 a,
-               uint64 font, int effect,
-               uint8 er, uint8 eg, uint8 eb, uint8 ea,
-               float effect_amount);
+void draw_rect(float x, float y, float w, float h, uint8 r, uint8 g, uint8 b, uint8 a, float thickness, float rounding, uint8 rounding_flags);
+void draw_rect_filled(float x, float y, float w, float h, uint8 r, uint8 g, uint8 b, uint8 a, float rounding, uint8 rounding_flags);
+void draw_line(float x1, float y1, float x2, float y2, uint8 r, uint8 g, uint8 b, uint8 a, float thickness);
+void draw_arc(float cx, float cy, float rx, float ry, float start_angle_deg, float sweep_angle_deg, uint8 r, uint8 g, uint8 b, uint8 a, float thickness, bool filled);
+void draw_circle(float cx, float cy, float radius, uint8 r, uint8 g, uint8 b, uint8 a, float thickness, bool filled);
+void draw_triangle(float ax, float ay, float bx, float by, float cx, float cy, uint8 r, uint8 g, uint8 b, uint8 a, float thickness, bool filled);
+void draw_polygon(const array<float> &in xy_pairs, uint count_pairs, uint8 r, uint8 g, uint8 b, uint8 a, float thickness, bool filled);
+void draw_four_corner_gradient(float x, float y, float w, float h, uint8 tlr, uint8 tlg, uint8 tlb, uint8 tla, uint8 trr, uint8 trg, uint8 trb, uint8 tra, uint8 blr, uint8 blg, uint8 blb, uint8 bla, uint8 brr, uint8 brg, uint8 brb, uint8 bra, float rounding);
 
-// Draws a line from (x1,y1) to (x2,y2) with the given color and thickness.
-void draw_line(float x1, float y1, float x2, float y2,
-               uint8 r, uint8 g, uint8 b, uint8 a, float thickness);
+uint64 create_bitmap(const array<uint8> &in data);
+void draw_bitmap(uint64 bmp, float x, float y, float w, float h, uint8 r, uint8 g, uint8 b, uint8 a, bool rounded);
 
-// Draws a rectangle outline at (x,y) with size (w,h).
-// thickness: border width. rounding: corner radius. rounding_flags: which corners (RR_*).
-void draw_rect(float x, float y, float w, float h,
-               uint8 r, uint8 g, uint8 b, uint8 a,
-               float thickness, float rounding, int rounding_flags);
-
-// Draws a filled rectangle at (x,y) with size (w,h).
-// rounding: corner radius. rounding_flags: which corners (RR_*).
-void draw_rect_filled(float x, float y, float w, float h,
-                      uint8 r, uint8 g, uint8 b, uint8 a,
-                      float rounding, int rounding_flags);
-
-// Draws a circle centered at (cx,cy) with given radius.
-// filled=true draws a solid disc; false draws an outline.
-void draw_circle(float cx, float cy, float radius,
-                 uint8 r, uint8 g, uint8 b, uint8 a,
-                 float thickness, bool filled);
-
-// Draws a triangle with vertices at (ax,ay), (bx,by), (cx,cy).
-// filled=true draws solid; false draws outline.
-void draw_triangle(float ax, float ay, float bx, float by, float cx, float cy,
-                   uint8 r, uint8 g, uint8 b, uint8 a,
-                   float thickness, bool filled);
-
-// Draws a rectangle with an independent RGBA color per corner.
-// tl=top-left, tr=top-right, bl=bottom-left, br=bottom-right.
-void draw_four_corner_gradient(float x, float y, float w, float h,
-                               uint8 tlr, uint8 tlg, uint8 tlb, uint8 tla,
-                               uint8 trr, uint8 trg, uint8 trb, uint8 tra,
-                               uint8 blr, uint8 blg, uint8 blb, uint8 bla,
-                               uint8 brr, uint8 brg, uint8 brb, uint8 bra,
-                               float rounding);
-
-// Creates a font from a file path or system font name.
-// antialias=true for smooth text. load_color=true only for color/emoji fonts.
-// glyph_ranges: optional array of Unicode range pairs ending with 0.
-uint64 create_font(const string &in path, float size, bool antialias,
-                   bool load_color, array<uint> @glyph_ranges = null);
-
-// Creates a font from raw memory bytes (font binary data).
-uint64 create_font_mem(const string &in label, float size, const array<uint8> &in buf,
-                       bool antialias, bool load_color, array<uint> @glyph_ranges = null);
-
-// Returns the built-in font at size 18.
+uint64 create_font(const string &in path, float size, bool antialias, bool load_color, array<uint>@ glyph_ranges = null);
+uint64 create_font_mem(const string &in label, float size, const array<uint8> &in buf, bool antialias, bool load_color, array<uint>@ glyph_ranges = null);
 uint64 get_font18();
-// Returns the built-in font at size 20.
 uint64 get_font20();
-// Returns the built-in font at size 24.
 uint64 get_font24();
-// Returns the built-in font at size 28.
 uint64 get_font28();
 
-// Returns the rendered width and height of text using the given font.
-void get_text_size(uint64 font, const string &in text, float &out w, float &out h);
+void draw_text(const string &in text, float x, float y, uint8 r, uint8 g, uint8 b, uint8 a, uint64 font, int effect, uint8 er, uint8 eg, uint8 eb, uint8 ea, float effect_amount);
+void draw_text(const string &in text, float x, float y, uint8 r, uint8 g, uint8 b, uint8 a, uint64 font, int effect, uint8 er, uint8 eg, uint8 eb, uint8 ea, float effect_amount, bool scale_with_view);
+void get_text_size(uint64 font, const string &in text, int maxw, int maxh, float &out w, float &out h);
+int get_char_advance(uint64 font, uint wchar32);
 
-// Returns the current viewport width and height in pixels.
-void get_view(float &out w, float &out h);
-
-// Returns the viewport scale factor (useful for DPI-aware sizing).
-float get_view_scale();
-
-// Returns the current frames per second.
-double get_fps();
+void clip_push(float x, float y, float w, float h);
+void clip_pop();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INPUT API
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Returns the cursor position inside the overlay window.
 void get_mouse_pos(float &out x, float &out y);
-
-// Returns the cursor position in desktop/screen coordinates.
 void get_mouse_pos_desktop(float &out x, float &out y);
-
-// Returns the mouse movement delta since the last frame (overlay space).
 void get_mouse_delta(float &out dx, float &out dy);
+void get_mouse_delta_desktop(float &out dx, float &out dy);
+bool mouse_movement_received();
+float get_scroll_delta();
+bool is_hovered(float x, float y, float w, float h);
 
-// Returns characters typed since the last frame. Use for text input fields.
-string get_recent_key_input();
-
-// Fills indices with the virtual key codes of all currently held keys.
-void get_keys_down(array<int> &out indices);
-
-// Returns a human-readable name for a virtual key code. E.g. get_key_name(0x41) → "A".
-string get_key_name(int vk);
-
-// Returns true while the key (virtual key code vk) is held down.
 bool key_down(int vk);
-
-// Returns true for the raw (unfiltered) down state of the key.
 bool key_raw_down(int vk);
-
-// Returns true if the key just transitioned from up to down this frame.
 bool key_fired(int vk);
-
-// Returns the toggle state of the key (e.g. CapsLock).
 bool key_toggle(int vk);
-
-// Returns true exactly once per press event. Useful for UI actions.
 bool key_singlepress(int vk);
-
-// Returns true if the key was down in the previous frame.
 bool key_prev_down(int vk);
-
-// Fetches all key state flags at once for virtual key vk.
-void get_key_state(int vk,
-                   bool &out raw_down, bool &out down,
-                   bool &out fired, bool &out toggle,
-                   bool &out singlepress, bool &out prev_down);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FILE SYSTEM API
-// ─────────────────────────────────────────────────────────────────────────────
-// All paths are relative to the script's working directory.
-
-// Creates or overwrites a file. data defaults to empty string. Returns true on success.
-bool create_file(const string &in path, const string &in data = "");
-
-// Reads a file into data. Returns true on success.
-bool read_file(const string &in path, string &out data);
-
-// Reads a file as raw bytes into data. Returns true on success.
-bool read_file_bytes(const string &in path, array<uint8> &out data);
-
-// Creates a directory. Create parent directories first before nesting.
-bool create_directory(const string &in path);
-
-// Returns true if the file exists.
-bool does_file_exist(const string &in path);
-
-// Lists files/directories. files=true includes files, dirs=true includes directories.
-// filter: file extension filters (empty = all). result: output names.
-bool query_directory(const string &in path, bool files, bool dirs,
-                     const array<string> &in filter, array<string> &out result);
-
-// Deletes a file. Returns true on success.
-bool delete_file(const string &in path);
-
-// Deletes an empty directory. Returns true on success.
-bool delete_directory(const string &in path);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// JSON API
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Parses a JSON string into a dictionary. Returns true on success.
-// Notes: JSON arrays are skipped. null fields are omitted. booleans map to 1.0/0.0.
-bool json_parse(const string &in text, dictionary &out result, string &out error);
-
-// Alias for json_parse.
-bool json_decode(const string &in text, dictionary &out result, string &out error);
-
-// Serializes a dictionary to a JSON string. Returns true on success.
-bool json_stringify(const dictionary &in value, string &out json, string &out error);
-
-// Alias for json_stringify.
-bool json_encode(const dictionary &in value, string &out json, string &out error);
+void get_key_state(int vk, bool &out raw_down, bool &out down, bool &out fired, bool &out toggle, bool &out singlepress, bool &out prev_down);
+void get_keys_down(array<int> &out indices);
+string get_recent_key_input();
+string get_key_name(int vk);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SYSTEM API
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Sets the current callback thread to highest OS priority. Use during heavy polling.
+string cpu_vendor();
+string cpu_brand();
+uint64 rdtsc();
+int64 perf_time();
+int64 perf_frequency();
+void zydis_disasm(const array<uint8> &in bytes, array<dictionary@> &out out_insts);
+void zydis_disasm(const array<uint8> &in bytes, uint64 runtime_rip, array<dictionary@> &out out_insts);
+dictionary@ get_datetime();
+uint64 get_timestamp();
 bool set_thread_to_highest_priority();
-
-// Sets the current callback thread to lowest OS priority.
 bool set_thread_to_lowest_priority();
-
-// Restores the current callback thread to normal OS priority.
 bool set_thread_to_normal_priority();
 
-// Disassembles bytes as x64 instructions. runtime_rip is the address used for display.
-// result: array of instruction dictionaries with keys: runtime_address, length, mnemonic,
-// text, operand_count, operand_count_visible, operands.
-bool zydis_disasm(const array<uint8> &in bytes, uint64 runtime_rip,
-                  array<dictionary@> &out result);
-
 // ─────────────────────────────────────────────────────────────────────────────
-// WIN API
+// NETWORKING
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Finds the first top-level window with the given title. Returns 0 if not found.
-uint64 find_window(const string &in title);
+bool net_http_get(const string &in url, uint &out status_code, string &out body, uint timeout_ms = 0);
+bool net_http_post(const string &in url, const string &in content_type, const string &in body, uint &out status_code, string &out response, uint timeout_ms = 0);
 
-// Gets the title of a window. Returns false if the hwnd is invalid.
-bool get_window_title(uint64 hwnd, string &out title);
+class ws_t {
+    bool is_open() const;
+    bool send_text(const string &in msg);
+    bool send_json(const string &in json);
+    bool send_binary(const array<uint8> &in data);
+    bool recv(string &out msg, bool &out is_text);
+    bool poll(string &out msg, bool &out is_text, bool &out is_closed);
+    void close(uint16 code = 1000);
+}
 
-// Gets the class name of a window. Returns false if the hwnd is invalid.
-bool get_window_class(uint64 hwnd, string &out cls);
-
-// Gets the screen rectangle of a window. Returns false if the hwnd is invalid.
-bool get_window_rect(uint64 hwnd, int &out x, int &out y, int &out w, int &out h);
-
-// Gets the thread and process IDs for the window's owner thread.
-bool get_window_thread_process_id(uint64 hwnd, uint &out thread_id, uint &out process_id);
-
-// Brings the window to the foreground. Returns true on success.
-bool set_foreground_window(uint64 hwnd);
-
-// Moves the mouse to absolute screen coordinates.
-void mouse_move(float x, float y);
-
-// Moves the mouse by (dx, dy) relative to its current position.
-void mouse_move_relative(float dx, float dy);
-
-// Simulates a left mouse button click at the current position.
-void mouse_left_click();
-
-// Simulates a right mouse button click at the current position.
-void mouse_right_click();
-
-// Simulates a middle mouse button click at the current position.
-void mouse_middle_click();
-
-// Simulates a mouse scroll. ticks > 0 scrolls up, ticks < 0 scrolls down.
-void mouse_scroll(int ticks);
-
-// Simulates a global key-down event for the given virtual key code.
-void win_key_down(uint vk);
-
-// Simulates a global key-up event for the given virtual key code.
-void win_key_up(uint vk);
-
-// Simulates a key press (down + up). delay_ms is clamped to 0-1000ms.
-void win_key_press(uint vk, int delay_ms = 30);
-
-// Sends a single character to a window via WM_CHAR. Returns true on success.
-bool send_char(uint64 hwnd, const string &in ch);
-
-// Sends a key to a window via WM_KEYDOWN/WM_KEYUP. Returns true on success.
-bool send_key(uint64 hwnd, uint vk);
-
-// Copies text to the system clipboard in UTF-8. Returns true on success.
-bool copy_to_clipboard(const string &in text);
-
-// Reads text from the system clipboard into text. Returns true on success.
-bool copy_from_clipboard(string &out text);
+ws_t ws_connect(const string &in url, uint timeout_ms = 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ENGINE-SPECIFIC API
+// FILE SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Reads an Unreal Engine TArray from memory into result.
-// max_count: safety limit (default 4096). Returns true on success.
-bool unreal_read_tarray(proc_t &in proc, uint64 tarray_addr,
-                        array<uint64> &out result, uint max_count = 4096);
-
-// Projects a 3D world position to 2D screen coordinates using a UE camera.
-// cam_rotation: pitch/yaw/roll in degrees. fov_deg: vertical field of view.
-// Returns true if the point is visible (in front of the camera).
-bool unreal_world_to_screen(const vector3 &in world_pos,
-                            const vector3 &in cam_location,
-                            const vector3 &in cam_rotation,
-                            float fov_deg,
-                            vector2 &out screen_pos);
-
-// Projects a 3D position to screen using a row-major view matrix (DirectX/Source style).
-// viewport: screen size override (0,0 = use overlay size).
-bool world_to_screen_rowmajor(const vector3 &in world_pos,
-                              const matrix4x4 &in view_matrix,
-                              vector2 &out screen_pos,
-                              const vector2 &in viewport = vector2(0, 0));
-
-// Projects a 3D position to screen using a column-major view matrix (Unity/OpenGL style).
-bool world_to_screen_transposed(const vector3 &in world_pos,
-                                const matrix4x4 &in view_matrix,
-                                vector2 &out screen_pos,
-                                const vector2 &in viewport = vector2(0, 0));
-
-// Reads and decrypts a Fortnite player name from memory. Returns empty string on failure.
-string fortnite_get_player_name(proc_t &in proc, uint64 name_addr);
+bool create_file(const string &in path, const string &in data = "");
+bool create_directory(const string &in path);
+bool read_file(const string &in path, string &out data);
+bool does_file_exist(const string &in path);
+bool query_directory(const string &in path, bool include_dirs, bool include_files, const array<string> &in extensions, array<string> &out entries);
+bool delete_file(const string &in path);
+bool delete_directory(const string &in path);
+bool write_file_binary(const string &in path, const array<uint8> &in data);
+bool read_file_binary(const string &in path, array<uint8> &out data);
+bool append_file_binary(const string &in path, const array<uint8> &in data);
+uint64 get_file_size(const string &in path);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BIT REINTERPRET HELPERS
+// JSON
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Reinterprets a 32-bit unsigned integer as an IEEE-754 float.
-// Example: bits_to_float(0x3F800000) == 1.0f
-float bits_to_float(uint bits);
-
-// Returns the exact IEEE-754 bit pattern of a float as a uint32.
-// Example: float_to_bits(1.0f) == 0x3F800000
-uint float_to_bits(float f);
+bool json_parse(const string &in text, dictionary &out result, string &out error);
+bool json_decode(const string &in text, dictionary &out result, string &out error);
+bool json_stringify(const dictionary &in value, string &out json, string &out error);
+bool json_encode(const dictionary &in value, string &out json, string &out error);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Encodes data as Base64 text using the standard A-Z a-z 0-9 +/ = alphabet.
 string util_base64_encode(const string &in data);
-
-// Decodes Base64 text back to raw bytes. Returns true on success.
-// error contains a message on failure.
-bool util_base64_decode(const string &in text, string &out data, string &out error);
+bool   util_base64_decode(const string &in text, string &out data, string &out error);
+string util_hex_encode(const string &in data);
+bool   util_hex_decode(const string &in text, string &out data, string &out error);
+string util_url_encode(const string &in data);
+string util_url_decode(const string &in data);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// INTRINSICS (SSE / BIT OPERATIONS)
+// HASH CONTAINERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Returns the number of set bits (population count) in a 32-bit value.
-int popcnt32(uint32 value);
-// Returns the number of set bits in a 64-bit value.
-int popcnt64(uint64 value);
+class hash_set {
+    bool contains(uint64 v) const;
+    bool insert(uint64 v);
+    bool erase(uint64 v);
+    void clear();
+    uint size() const;
+    bool empty() const;
+    void set(uint64 v);
+    bool get(uint64 v, uint64 &out value);
+    void iter_begin();
+    bool iter_next(uint64 &out value);
+}
 
-// Returns the number of leading zero bits in a 32-bit value.
-int lzcnt32(uint32 value);
-// Returns the number of leading zero bits in a 64-bit value.
-int lzcnt64(uint64 value);
+class hash_map {
+    void set(uint64 key, ? &in value);
+    bool get(uint64 key, ? &out value);
+    bool contains(uint64 key);
+    bool erase(uint64 key);
+    void clear();
+    uint size();
+    bool empty();
+    void iter_begin();
+    bool iter_next_key(uint64 &out key);
+    bool iter_next(uint64 &out key, ? &out value);
+}
 
-// Returns the number of trailing zero bits in a 32-bit value.
-int tzcnt32(uint32 value);
-// Returns the number of trailing zero bits in a 64-bit value.
-int tzcnt64(uint64 value);
+// ─────────────────────────────────────────────────────────────────────────────
+// BIT REINTERPRET
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Rotates a value left by count bits (wrap-around).
+uint32 f_to_u32(float f);
+uint32 u8_to_u32(uint8 v);
+uint32 u16_to_u32(uint16 v);
+uint32 u64_to_u32(uint64 v);
+uint32 i8_to_u32(int8 v);
+uint32 i16_to_u32(int16 v);
+uint32 i32_to_u32(int32 v);
+uint32 i64_to_u32(int64 v);
+uint32 d_to_u32(double v);
+float  bits_to_float(uint raw);
+double bits_to_double(uint64 raw);
+uint   float_to_bits(float value);
+uint64 double_to_bits(double value);
+float  u32_to_f(uint raw);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BITWISE INTRINSICS
+// ─────────────────────────────────────────────────────────────────────────────
+
 uint8  rol8(uint8 value, int count);
 uint8  ror8(uint8 value, int count);
 uint16 rol16(uint16 value, int count);
@@ -1041,13 +626,370 @@ uint32 ror32(uint32 value, int count);
 uint64 rol64(uint64 value, int count);
 uint64 ror64(uint64 value, int count);
 
-// SIMD comparison: compares a[i] == b[i] per byte. Sets result bytes to 0xFF if equal, 0 otherwise.
-void mm_cmpeq_epi8(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
-void mm_cmpeq_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
-void mm_cmpeq_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+uint16 bswap16(uint16 value);
+uint32 bswap32(uint32 value);
+uint64 bswap64(uint64 value);
 
-// Extracts a lane from a SIMD register (array<uint8> holding 16 bytes).
+int popcnt32(uint32 value);
+int popcnt64(uint64 value);
+int lzcnt32(uint32 value);
+int lzcnt64(uint64 value);
+int tzcnt32(uint32 value);
+int tzcnt64(uint64 value);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SSE / SIMD INTRINSICS (128-bit via array<uint8>[16])
+// ─────────────────────────────────────────────────────────────────────────────
+
+void mm_xor_si128(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_or_si128(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_and_si128(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_andnot_si128(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_slli_epi16(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_srli_epi16(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_slli_epi32(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_srli_epi32(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_slli_epi64(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_srli_epi64(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_slli_si128(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_srli_si128(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_shuffle_epi8(const array<uint8> &in a, const array<uint8> &in mask, array<uint8> &out result);
+void mm_shuffle_epi32(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_shufflehi_epi16(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_shufflelo_epi16(const array<uint8> &in a, int imm8, array<uint8> &out result);
+void mm_unpackhi_epi8(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpackhi_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpackhi_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpackhi_epi64(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpacklo_epi8(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpacklo_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpacklo_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_unpacklo_epi64(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_add_epi8(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_add_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_add_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_add_epi64(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_sub_epi8(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_sub_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_sub_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_sub_epi64(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_mullo_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_mullo_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_set_epi64x(int64 e1, int64 e0, array<uint8> &out result);
+void mm_set_epi32(int32 e3, int32 e2, int32 e1, int32 e0, array<uint8> &out result);
+void mm_set1_epi64x(int64 a, array<uint8> &out result);
+void mm_set1_epi32(int32 a, array<uint8> &out result);
+void mm_set1_epi16(int16 a, array<uint8> &out result);
+void mm_set1_epi8(int8 a, array<uint8> &out result);
+void mm_setzero_si128(array<uint8> &out result);
+void broadcast_qword(uint64 value, array<uint8> &out result);
+void broadcast_dword(uint32 value, array<uint8> &out result);
 int64 mm_extract_epi64(const array<uint8> &in a, int index);
 int32 mm_extract_epi32(const array<uint8> &in a, int index);
 int32 mm_extract_epi16(const array<uint8> &in a, int index);
 int32 mm_extract_epi8(const array<uint8> &in a, int index);
+void mm_cmpeq_epi8(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_cmpeq_epi16(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+void mm_cmpeq_epi32(const array<uint8> &in a, const array<uint8> &in b, array<uint8> &out result);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MATH CONSTANTS & UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
+
+const double M_PI      = 3.141592653589793;
+const double M_TAU     = 6.283185307179586;
+const double M_PI_2    = 1.5707963267948966;
+const double M_PI_4    = 0.7853981633974483;
+const double RAD2DEG   = 57.29577951308232;
+const double DEG2RAD   = 0.017453292519943295;
+const double M_ZERO    = 0.0;
+const double M_ONE     = 1.0;
+const double M_EPSILON = 0.000001;
+
+double clamp(double x, double a, double b);
+double saturate(double x);
+int    sign(double x);
+double round(double x);
+double round_up(double x);
+double round_down(double x);
+double fract(double x);
+double wrap(double x, double minv, double maxv);
+double lerp(double a, double b, double t);
+double inverse_lerp(double a, double b, double v);
+double remap(double a1, double b1, double a2, double b2, double v);
+double smoothstep(double edge0, double edge1, double x);
+double step(double edge, double x);
+bool   is_nan(double x);
+bool   is_inf(double x);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXTENDED MATH TYPES
+// ─────────────────────────────────────────────────────────────────────────────
+
+class vector2 {
+    double x;
+    double y;
+    vector2();
+    vector2(double x, double y);
+    vector2(const vector2 &in other);
+    vector2 opAdd(const vector2 &in other) const;
+    vector2 opSub(const vector2 &in other) const;
+    vector2 opNeg() const;
+    vector2 opMul(double s) const;
+    vector2 opDiv(double s) const;
+    bool opEquals(const vector2 &in other) const;
+    double length() const;
+    double distance(const vector2 &in other) const;
+    double distance_to(const vector2 &in other) const;
+    vector2 lerp(const vector2 &in other, double t) const;
+    vector2 min(const vector2 &in other) const;
+    vector2 max(const vector2 &in other) const;
+    void readas_double(proc_t &in proc, uint64 addr);
+    void readas_float(proc_t &in proc, uint64 addr);
+    bool writeas_double(proc_t &in proc, uint64 addr) const;
+    bool writeas_float(proc_t &in proc, uint64 addr) const;
+}
+
+class vector3 {
+    double x;
+    double y;
+    double z;
+    vector3();
+    vector3(double x, double y, double z);
+    vector3(const vector3 &in other);
+    vector3 opAdd(const vector3 &in other) const;
+    vector3 opSub(const vector3 &in other) const;
+    vector3 opNeg() const;
+    vector3 opMul(double s) const;
+    vector3 opDiv(double s) const;
+    bool opEquals(const vector3 &in other) const;
+    double length() const;
+    double length2d() const;
+    double distance(const vector3 &in other) const;
+    double distance2d(const vector3 &in other) const;
+    double distance_to(const vector3 &in other) const;
+    double distance2d_to(const vector3 &in other) const;
+    vector3 lerp(const vector3 &in other, double t) const;
+    vector3 min(const vector3 &in other) const;
+    vector3 max(const vector3 &in other) const;
+    double dot_product(const vector3 &in other) const;
+    vector3 cross_product(const vector3 &in other) const;
+    void readas_double(proc_t &in proc, uint64 addr);
+    void readas_float(proc_t &in proc, uint64 addr);
+    bool writeas_double(proc_t &in proc, uint64 addr) const;
+    bool writeas_float(proc_t &in proc, uint64 addr) const;
+}
+
+class quaternion {
+    double x;
+    double y;
+    double z;
+    double w;
+    quaternion();
+    quaternion(double x, double y, double z, double w);
+    quaternion opMul(const quaternion &in other) const;
+    quaternion opMul(double s) const;
+    quaternion opDiv(double s) const;
+    quaternion opAdd(const quaternion &in other) const;
+    quaternion opSub(const quaternion &in other) const;
+    quaternion opNeg() const;
+    bool opEquals(const quaternion &in other) const;
+    double length() const;
+    quaternion normalized() const;
+    double dot(const quaternion &in other) const;
+    quaternion conjugate() const;
+    quaternion inverse() const;
+    void to_euler(double &out pitch, double &out yaw, double &out roll) const;
+    vector3 rotate(const vector3 &in v) const;
+    void readas_double(proc_t &in proc, uint64 addr);
+    void readas_float(proc_t &in proc, uint64 addr);
+    bool writeas_double(proc_t &in proc, uint64 addr) const;
+    bool writeas_float(proc_t &in proc, uint64 addr) const;
+}
+
+class matrix4x4 {
+    matrix4x4();
+    matrix4x4 opMul(const matrix4x4 &in other) const;
+    vector3 transform(const vector3 &in v) const;
+    void read(proc_t &in proc, uint64 addr);
+    bool write(proc_t &in proc, uint64 addr) const;
+    void readas_float(proc_t &in proc, uint64 addr);
+    bool writeas_float(proc_t &in proc, uint64 addr) const;
+    void readas_double(proc_t &in proc, uint64 addr);
+    bool writeas_double(proc_t &in proc, uint64 addr) const;
+}
+
+quaternion quat_from_euler(double pitch, double yaw, double roll);
+matrix4x4  mat4_identity();
+matrix4x4  mat4_zero();
+matrix4x4  mat4_translate(double tx, double ty, double tz);
+matrix4x4  mat4_scale(double sx, double sy, double sz);
+matrix4x4  mat4_rotate_euler(double pitch, double yaw, double roll);
+matrix4x4  mat4_from_quaternion(const quaternion &in q);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RANDOM
+// ─────────────────────────────────────────────────────────────────────────────
+
+void   random_seed(uint64 seed);
+double random();
+double random_range(double minv, double maxv);
+int64  random_int(int64 minv, int64 maxv);
+bool   random_bool();
+double random_gaussian(double mean, double stddev);
+vector2 random_unit_vec2();
+vector3 random_unit_vec3();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENGINE-SPECIFIC HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+bool unreal_read_tarray(proc_t &in proc, uint64 tarray_addr, array<uint64> &out result, uint max_count = 4096);
+bool unreal_read_minimal_view_info(proc_t &in proc, uint64 pov_addr, vector3 &out location, vector3 &out rotation, double &out fov);
+bool unreal_read_minimal_view_info_f64(proc_t &in proc, uint64 pov_addr, vector3 &out location, vector3 &out rotation, double &out fov);
+bool unreal_world_to_screen(const vector3 &in world_pos, const vector3 &in cam_location, const vector3 &in cam_rotation, double fov_deg, vector2 &out screen_pos);
+bool world_to_screen_rowmajor(const vector3 &in world_pos, const matrix4x4 &in view_matrix, vector2 &out screen_pos, const vector2 &in viewport = vector2(0, 0));
+bool world_to_screen_transposed(const vector3 &in world_pos, const matrix4x4 &in view_matrix, vector2 &out screen_pos, const vector2 &in viewport = vector2(0, 0));
+bool source2_world_to_screen(const vector3 &in world_pos, const matrix4x4 &in view_matrix, vector2 &out screen_pos, const vector2 &in viewport = vector2(0, 0));
+string  fortnite_get_player_name(proc_t &in proc, uint64 addr);
+vector3 rust_get_transform_position(proc_t &in proc, uint64 addr);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WIN API
+// ─────────────────────────────────────────────────────────────────────────────
+
+class WindowInfo {
+    uint64 hwnd;
+    uint   pid;
+    uint   tid;
+    string process_name;
+    string title;
+    string class_name;
+}
+
+uint64 find_window(const string &in title);
+uint64 find_window(const string &in title, const string &in class_name);
+array<WindowInfo>@ get_all_hwnds();
+
+bool get_window_size(uint64 hwnd, int &out w, int &out h);
+bool get_window_rect(uint64 hwnd, int &out x, int &out y, int &out w, int &out h);
+bool get_window_title(uint64 hwnd, string &out title);
+bool get_window_class(uint64 hwnd, string &out cls);
+bool set_foreground_window(uint64 hwnd);
+bool is_foreground_window(uint64 hwnd);
+bool is_window_active(uint64 hwnd);
+bool copy_to_clipboard(const string &in text);
+bool copy_from_clipboard(string &out text);
+bool get_window_thread_process_id(uint64 hwnd, uint &out tid, uint &out pid);
+bool post_message(uint64 hwnd, uint msg, uint64 wparam, uint64 lparam);
+
+void win_key_down(uint vk);
+void win_key_up(uint vk);
+void win_key_press(uint vk, uint delay_ms = 30);
+bool send_char(uint64 hwnd, const string &in text);
+bool send_key(uint64 hwnd, uint vk);
+void mouse_move(int x, int y);
+void mouse_move_relative(int dx, int dy);
+void mouse_left_click();
+void mouse_right_click();
+void mouse_middle_click();
+void mouse_scroll(int amount);
+void send_mouse_input(int64 dx, int64 dy, uint flags, uint mouse_data);
+int64 get_tickcount64();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNICORN ENGINE
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UcProtect  { UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC, UC_PROT_ALL }
+enum UcHookType { UC_HOOK_CODE, UC_HOOK_MEM_UNMAPPED }
+enum UcX86Register {
+    UC_X86_REG_RAX, UC_X86_REG_RBX, UC_X86_REG_RCX, UC_X86_REG_RDX,
+    UC_X86_REG_RSI, UC_X86_REG_RDI, UC_X86_REG_RBP, UC_X86_REG_RSP,
+    UC_X86_REG_R8,  UC_X86_REG_R9,  UC_X86_REG_R10, UC_X86_REG_R11,
+    UC_X86_REG_R12, UC_X86_REG_R13, UC_X86_REG_R14, UC_X86_REG_R15,
+    UC_X86_REG_RIP, UC_X86_REG_EFLAGS,
+    UC_X86_REG_CS,  UC_X86_REG_DS,  UC_X86_REG_ES,  UC_X86_REG_FS,  UC_X86_REG_GS, UC_X86_REG_SS,
+    UC_X86_REG_FS_BASE, UC_X86_REG_GS_BASE, UC_X86_REG_MXCSR,
+    UC_X86_REG_XMM0,  UC_X86_REG_XMM1,  UC_X86_REG_XMM2,  UC_X86_REG_XMM3,
+    UC_X86_REG_XMM4,  UC_X86_REG_XMM5,  UC_X86_REG_XMM6,  UC_X86_REG_XMM7,
+    UC_X86_REG_XMM8,  UC_X86_REG_XMM9,  UC_X86_REG_XMM10, UC_X86_REG_XMM11,
+    UC_X86_REG_XMM12, UC_X86_REG_XMM13, UC_X86_REG_XMM14, UC_X86_REG_XMM15,
+    UC_X86_REG_YMM0,  UC_X86_REG_YMM1,  UC_X86_REG_YMM2,  UC_X86_REG_YMM3,
+    UC_X86_REG_YMM4,  UC_X86_REG_YMM5,  UC_X86_REG_YMM6,  UC_X86_REG_YMM7,
+    UC_X86_REG_YMM8,  UC_X86_REG_YMM9,  UC_X86_REG_YMM10, UC_X86_REG_YMM11,
+    UC_X86_REG_YMM12, UC_X86_REG_YMM13, UC_X86_REG_YMM14, UC_X86_REG_YMM15
+}
+
+uint64 uc_create();
+uint64 uc_create_process(proc_t proc, bool allow_writes = true);
+void   uc_close(uint64 handle);
+bool   uc_mem_map(uint64 handle, uint64 addr, uint64 size, uint32 perms);
+bool   uc_mem_write(uint64 handle, uint64 addr, const array<uint8> &in data);
+bool   uc_mem_read(uint64 handle, uint64 addr, uint32 size, array<uint8> &out data);
+bool   uc_reg_write64(uint64 handle, int reg, uint64 value);
+uint64 uc_reg_read64(uint64 handle, int reg);
+bool   uc_reg_write128(uint64 handle, int reg, const array<uint8> &in data);
+bool   uc_reg_read128(uint64 handle, int reg, array<uint8> &out data);
+bool   uc_reg_write256(uint64 handle, int reg, const array<uint8> &in data);
+bool   uc_reg_read256(uint64 handle, int reg, array<uint8> &out data);
+bool   uc_setup_stack(uint64 handle, uint64 stack_base, uint64 stack_size, uint64 stop_addr);
+int    uc_start(uint64 handle, uint64 begin, uint64 end, uint64 timeout = 0, uint64 count = 0);
+bool   uc_flush_code(uint64 handle);
+bool   uc_hook_add(uint64 handle, int type, UcHookFn@ cb);
+void   uc_emu_stop(uint64 handle);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ZYDIS DISASSEMBLER / ENCODER
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum ZydisMachineMode { MODE_LONG_64, MODE_LONG_COMPAT_32, MODE_LONG_COMPAT_16, MODE_LEGACY_32, MODE_LEGACY_16, MODE_REAL_16 }
+enum ZydisBranchType  { BRANCH_NONE, BRANCH_SHORT, BRANCH_NEAR, BRANCH_FAR }
+enum ZydisBranchWidth { WIDTH_NONE, WIDTH_8, WIDTH_16, WIDTH_32, WIDTH_64 }
+
+class ZydisEncoderRequest {
+    void set_mnemonic(int mnemonic);
+    int  get_mnemonic();
+    void set_machine_mode(int mode);
+    int  get_machine_mode();
+    void set_operand_count(int count);
+    int  get_operand_count();
+    void set_branch_type(int type);
+    void set_branch_width(int width);
+    void set_operand_reg(int index, int reg);
+    void set_operand_imm(int index, int64 imm);
+    void set_operand_mem(int index, int base, int idx, int scale, int64 disp, int size);
+    void set_operand_ptr(int index, uint16 segment, uint32 offset);
+}
+
+class ZydisBuilder {
+    void set_machine_mode(int mode);
+    void set_base_address(uint64 addr);
+    void clear();
+    void push(const ZydisEncoderRequest &in req);
+    int  get_instruction_count();
+    void push_bytes(const array<uint8> &in bytes);
+    void push_byte(uint8 b);
+    void push_u16(uint16 value);
+    void push_u32(uint32 value);
+    void push_u64(uint64 value);
+    void push_nop(int count = 1);
+    void push_int3();
+    void push_ret();
+    bool build(array<uint8> &out bytes);
+}
+
+bool   zydis_encode(ZydisEncoderRequest &in req, array<uint8> &out bytes);
+bool   zydis_encode_absolute(ZydisEncoderRequest &in req, uint64 runtime_address, array<uint8> &out bytes);
+bool   zydis_nop_fill(array<uint8> &out bytes, uint32 length);
+bool   zydis_decoded_to_request(const array<uint8> &in bytes, uint64 runtime_rip, ZydisEncoderRequest &out req);
+int    zydis_mnemonic_from_string(const string &in name);
+string zydis_mnemonic_to_string(int mnemonic);
+int    zydis_register_from_string(const string &in name);
+string zydis_register_to_string(int reg);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MISC
+// ─────────────────────────────────────────────────────────────────────────────
+
+void set_bf6_globals(uint64 client_game_context_offset, uint64 player_manager_offset, uint64 local_player_offset, uint64 player_array_offset, uint64 soldier_offset, uint64 health_component_offset);

@@ -1,6 +1,7 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import * as cp from 'child_process';
-import {workspace, ExtensionContext, commands, debug, window, WorkspaceEdit, Range, Position, DebugConfigurationProvider, WorkspaceFolder, DebugConfiguration, CancellationToken, ProviderResult} from 'vscode';
+import {workspace, ExtensionContext, commands, debug, DebugConfigurationProvider, WorkspaceFolder, DebugConfiguration, CancellationToken, ProviderResult} from 'vscode';
 
 import {
     LanguageClient,
@@ -12,21 +13,16 @@ import * as vscode from "vscode";
 
 let s_client: LanguageClient;
 let s_bundlerChannel: vscode.OutputChannel | undefined;
+let s_statusBar: vscode.StatusBarItem | undefined;
 
 export function activate(context: ExtensionContext) {
-    // The server is implemented in node
     const serverModule = context.asAbsolutePath(
         path.join('server', 'out', 'server.js')
     );
 
-    // If the extension is launched in debug mode then the debug server options are used
-    // Otherwise the run options are used
     const serverOptions: ServerOptions = {
         run: {module: serverModule, transport: TransportKind.ipc},
-        debug: {
-            module: serverModule,
-            transport: TransportKind.ipc,
-        }
+        debug: {module: serverModule, transport: TransportKind.ipc}
     };
 
     const clientOptions: LanguageClientOptions = {
@@ -39,7 +35,6 @@ export function activate(context: ExtensionContext) {
         }
     };
 
-    // Create the language client and start the client.
     s_client = new LanguageClient(
         'angelScript',
         'AngelScript Language Server',
@@ -50,112 +45,214 @@ export function activate(context: ExtensionContext) {
     s_client.onRequest("angelScript/smartBackspace", () => { /* reserved for future use */ });
 
     subscribeCommands(context);
+    setupStatusBar(context);
 
-    // Start the client. This will also launch the server
     s_client.start();
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    if (!s_client) {
-        return undefined;
-    }
+    s_statusBar?.dispose();
+    if (!s_client) return undefined;
     return s_client.stop();
 }
 
-// -----------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setupStatusBar(context: ExtensionContext) {
+    s_statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
+    s_statusBar.text = '$(code) Perception AS';
+    s_statusBar.tooltip = 'Perception AngelScript — click for commands';
+    s_statusBar.command = 'angelScript.statusBarMenu';
+    context.subscriptions.push(s_statusBar);
+
+    context.subscriptions.push(
+        commands.registerCommand('angelScript.statusBarMenu', showStatusBarMenu)
+    );
+
+    const updateVisibility = (editor: vscode.TextEditor | undefined) => {
+        const lang = editor?.document.languageId;
+        if (lang === 'angelscript' || lang === 'angelscript-predefined') {
+            s_statusBar!.show();
+        } else {
+            s_statusBar!.hide();
+        }
+    };
+
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(updateVisibility)
+    );
+    updateVisibility(vscode.window.activeTextEditor);
+}
+
+async function showStatusBarMenu() {
+    const pick = await vscode.window.showQuickPick([
+        {label: '$(package) Bundle Script',                  detail: 'Ctrl+Alt+B',       command: 'angelScript.bundle'},
+        {label: '$(package) Bundle Script (Strip Comments)', detail: 'Ctrl+Alt+Shift+B', command: 'angelScript.bundleStripped'},
+        {label: '$(rocket) Initialize Project',              detail: 'Scaffold tasks.json + source/main.as', command: 'angelScript.initProject'},
+        {label: '$(book) Open Perception Docs',              detail: 'docs.perception.cx', command: 'angelScript.openDocs'},
+        {label: '$(gear) View Settings',                     detail: 'angelScript.*',     command: 'angelScript.openSettings'},
+    ], {placeHolder: 'Perception AngelScript'});
+
+    if (pick) commands.executeCommand(pick.command);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Debug adapters
+// ─────────────────────────────────────────────────────────────────────────────
 
 class AngelScriptConfigurationProvider implements DebugConfigurationProvider {
-    resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+    resolveDebugConfiguration(_folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
         return config;
     }
-
-    resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+    resolveDebugConfigurationWithSubstitutedVariables(_folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
         return config;
     }
 }
 
 class AngelScriptDebugAdapterServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-    async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): Promise<vscode.DebugAdapterDescriptor> {
+    async createDebugAdapterDescriptor(session: vscode.DebugSession): Promise<vscode.DebugAdapterDescriptor> {
         return new vscode.DebugAdapterServer(session.configuration.port, session.configuration.address);
     }
 }
 
 class AngelScriptDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory {
-	createDebugAdapterTracker(session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterTracker> {
-		return {};
-	}
+    createDebugAdapterTracker(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterTracker> {
+        return {};
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AngelScript Bundle Task Provider
+// Bundle task provider
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AngelScriptBundleTaskProvider implements vscode.TaskProvider {
-    private readonly _context: ExtensionContext;
+    constructor(private readonly _context: ExtensionContext) {}
 
-    constructor(context: ExtensionContext) {
-        this._context = context;
-    }
-
-    provideTasks(): vscode.Task[] {
-        return [];
-    }
+    provideTasks(): vscode.Task[] { return []; }
 
     resolveTask(task: vscode.Task): vscode.Task | undefined {
-        const definition = task.definition as { type: string; src: string; out: string; strip?: boolean };
-        if (definition.type !== 'angelscript-bundle') return undefined;
-        if (!definition.src || !definition.out) return undefined;
+        const def = task.definition as {type: string; src: string; out: string; strip?: boolean};
+        if (def.type !== 'angelscript-bundle' || !def.src || !def.out) return undefined;
 
         const bundlerScript = this._context.asAbsolutePath(path.join('scripts', 'bundler.js'));
-        const args = [bundlerScript, definition.src, definition.out];
-        if (definition.strip) args.push('--strip');
-
-        const execution = new vscode.ShellExecution(`node ${args.map(a => `"${a}"`).join(' ')}`);
+        const args = [bundlerScript, def.src, def.out];
+        if (def.strip) args.push('--strip');
 
         return new vscode.Task(
-            definition,
+            def,
             vscode.TaskScope.Workspace,
             task.name,
             'angelscript-bundle',
-            execution,
-            []
+            new vscode.ShellExecution(`node ${args.map(a => `"${a}"`).join(' ')}`)
         );
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Command registration
+// ─────────────────────────────────────────────────────────────────────────────
+
 function subscribeCommands(context: ExtensionContext) {
     context.subscriptions.push(
-        commands.registerCommand('angelScript.debug.printGlobalScope', async () => {
-            const editor = vscode.window.activeTextEditor;
-            if (editor) {
-                const uri = editor.document.uri.toString();
-                const result = await s_client.sendRequest("angelScript/printGlobalScope", {uri: uri});
-                vscode.window.showInformationMessage(`Print Global Scope: ${result}`);
-            } else {
-                vscode.window.showInformationMessage('No active editor');
-            }
-        })
+        commands.registerCommand('angelScript.bundle', () => runBundleCommand(context, false)),
+        commands.registerCommand('angelScript.bundleStripped', () => runBundleCommand(context, true)),
+        commands.registerCommand('angelScript.openSettings', () =>
+            commands.executeCommand('workbench.action.openSettings', 'angelScript')
+        ),
+        commands.registerCommand('angelScript.openDocs', () =>
+            vscode.env.openExternal(vscode.Uri.parse('https://docs.perception.cx'))
+        ),
+        commands.registerCommand('angelScript.initProject', () => initProject()),
+        vscode.tasks.registerTaskProvider('angelscript-bundle', new AngelScriptBundleTaskProvider(context)),
+        debug.registerDebugConfigurationProvider("angel-lsp-dap", new AngelScriptConfigurationProvider()),
+        debug.registerDebugAdapterDescriptorFactory("angel-lsp-dap", new AngelScriptDebugAdapterServerDescriptorFactory()),
+        debug.registerDebugAdapterTrackerFactory("angel-lsp-dap", new AngelScriptDebugAdapterTrackerFactory())
     );
-
-    context.subscriptions.push(
-        commands.registerCommand('angelScript.bundle', () => runBundleCommand(context, false))
-    );
-
-    context.subscriptions.push(
-        commands.registerCommand('angelScript.bundleStripped', () => runBundleCommand(context, true))
-    );
-
-    context.subscriptions.push(
-        vscode.tasks.registerTaskProvider('angelscript-bundle', new AngelScriptBundleTaskProvider(context))
-    );
-
-    context.subscriptions.push(debug.registerDebugConfigurationProvider("angel-lsp-dap", new AngelScriptConfigurationProvider()));
-    context.subscriptions.push(debug.registerDebugAdapterDescriptorFactory("angel-lsp-dap", new AngelScriptDebugAdapterServerDescriptorFactory()));
-    context.subscriptions.push(debug.registerDebugAdapterTrackerFactory("angel-lsp-dap", new AngelScriptDebugAdapterTrackerFactory()));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bundle command implementation
+// Initialize project
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function initProject(): Promise<void> {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders || folders.length === 0) {
+        vscode.window.showErrorMessage('AngelScript: No workspace folder open.');
+        return;
+    }
+
+    const wsRoot = folders[0].uri.fsPath;
+    const created: string[] = [];
+
+    // ── .vscode/tasks.json ───────────────────────────────────────────────────
+    const vscodeDir = path.join(wsRoot, '.vscode');
+    const tasksFile = path.join(vscodeDir, 'tasks.json');
+
+    if (!fs.existsSync(tasksFile)) {
+        fs.mkdirSync(vscodeDir, {recursive: true});
+        fs.writeFileSync(tasksFile, JSON.stringify({
+            "version": "2.0.0",
+            "tasks": [
+                {
+                    "label": "Bundle Perception Script",
+                    "type": "angelscript-bundle",
+                    "src": "source",
+                    "out": "output/script.as",
+                    "strip": true,
+                    "group": {
+                        "kind": "build",
+                        "isDefault": true
+                    }
+                }
+            ]
+        }, null, 4));
+        created.push('.vscode/tasks.json');
+    }
+
+    // ── source/main.as ───────────────────────────────────────────────────────
+    const sourceDir = path.join(wsRoot, 'source');
+    const mainFile = path.join(sourceDir, 'main.as');
+
+    if (!fs.existsSync(mainFile)) {
+        fs.mkdirSync(sourceDir, {recursive: true});
+        fs.writeFileSync(mainFile,
+`int main()
+{
+    return 1;
+}
+
+void on_unload()
+{
+}
+`);
+        created.push('source/main.as');
+    }
+
+    // ── output/ directory ────────────────────────────────────────────────────
+    const outputDir = path.join(wsRoot, 'output');
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, {recursive: true});
+        created.push('output/');
+    }
+
+    if (created.length === 0) {
+        vscode.window.showInformationMessage('AngelScript: Project already initialized — no files created.');
+        return;
+    }
+
+    const choice = await vscode.window.showInformationMessage(
+        `AngelScript: Created ${created.join(', ')}`,
+        'Open main.as'
+    );
+    if (choice === 'Open main.as') {
+        vscode.window.showTextDocument(vscode.Uri.file(mainFile));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bundle command
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function runBundleCommand(context: ExtensionContext, strip: boolean): Promise<void> {
@@ -167,19 +264,17 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
 
     const wsRoot = workspaceFolders[0].uri.fsPath;
 
-    // ── Step 1: pick source directory ────────────────────────────────────────
     const srcInput = await vscode.window.showInputBox({
         title: 'AngelScript Bundle — Source Directory',
-        prompt: 'Enter the source directory containing your .as files (relative to workspace root)',
+        prompt: 'Directory containing your .as files (relative to workspace root)',
         value: 'source',
         validateInput: (v) => v.trim().length === 0 ? 'Source directory cannot be empty' : undefined,
     });
     if (srcInput === undefined) return;
 
-    // ── Step 2: pick output file ─────────────────────────────────────────────
     const outInput = await vscode.window.showInputBox({
         title: 'AngelScript Bundle — Output File',
-        prompt: 'Enter the output file path (relative to workspace root)',
+        prompt: 'Output file path (relative to workspace root)',
         value: 'output/bundled.as',
         validateInput: (v) => v.trim().length === 0 ? 'Output path cannot be empty' : undefined,
     });
@@ -188,10 +283,9 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
     const srcPath = path.resolve(wsRoot, srcInput.trim());
     const outPath = path.resolve(wsRoot, outInput.trim());
 
-    // ── Step 3: check LSP diagnostics for errors ─────────────────────────────
+    // Pre-build diagnostic check
     const allDiagnostics = vscode.languages.getDiagnostics();
     const errors: string[] = [];
-
     for (const [uri, diags] of allDiagnostics) {
         if (!uri.fsPath.endsWith('.as')) continue;
         const fileErrors = diags.filter(d => d.severity === vscode.DiagnosticSeverity.Error);
@@ -203,14 +297,13 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
     if (errors.length > 0) {
         const proceed = await vscode.window.showWarningMessage(
             `AngelScript Bundle: ${errors.length} file(s) have errors:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n…and ${errors.length - 5} more` : ''}\n\nBundling may produce invalid output.`,
-            { modal: true },
+            {modal: true},
             'Continue Anyway',
             'Cancel'
         );
         if (proceed !== 'Continue Anyway') return;
     }
 
-    // ── Step 4: run the bundler ───────────────────────────────────────────────
     const bundlerScript = context.asAbsolutePath(path.join('scripts', 'bundler.js'));
     const bundlerArgs = [bundlerScript, srcPath, outPath];
     if (strip) bundlerArgs.push('--strip');
@@ -222,23 +315,18 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
     outputChannel.clear();
     outputChannel.show(true);
     outputChannel.appendLine(`[Bundle] Starting${strip ? ' (strip comments)' : ''}...`);
-    outputChannel.appendLine(`[Bundle]   src:  ${srcPath}`);
-    outputChannel.appendLine(`[Bundle]   out:  ${outPath}`);
+    outputChannel.appendLine(`[Bundle]   src: ${srcPath}`);
+    outputChannel.appendLine(`[Bundle]   out: ${outPath}`);
 
     return new Promise<void>((resolve) => {
-        const proc = cp.spawn('node', bundlerArgs, { cwd: wsRoot });
+        const proc = cp.spawn('node', bundlerArgs, {cwd: wsRoot});
 
-        proc.stdout.on('data', (data: Buffer) => {
-            outputChannel.append(data.toString());
-        });
-
-        proc.stderr.on('data', (data: Buffer) => {
-            outputChannel.append(data.toString());
-        });
+        proc.stdout.on('data', (data: Buffer) => outputChannel.append(data.toString()));
+        proc.stderr.on('data', (data: Buffer) => outputChannel.append(data.toString()));
 
         proc.on('close', (code) => {
             if (code === 0) {
-                outputChannel.appendLine(`[Bundle] ✓ Complete`);
+                outputChannel.appendLine('[Bundle] ✓ Complete');
                 vscode.window.showInformationMessage(
                     `AngelScript Bundle: ✓ Bundled to ${path.relative(wsRoot, outPath)}`,
                     'Open File'
@@ -250,7 +338,7 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
             } else {
                 outputChannel.appendLine(`[Bundle] ✗ Failed with exit code ${code}`);
                 vscode.window.showErrorMessage(
-                    `AngelScript Bundle failed. See the "AngelScript Bundler" output channel for details.`
+                    'AngelScript Bundle failed. See the "AngelScript Bundler" output panel for details.'
                 );
             }
             resolve();

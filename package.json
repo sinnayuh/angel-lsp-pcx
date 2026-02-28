@@ -4,7 +4,7 @@
     "description": "AngelScript Language Server pre-configured for Perception.cx — IntelliSense, type checking, bundler, and full API coverage out of the box.",
     "author": "sinnayuh",
     "license": "MIT",
-    "version": "0.3.82",
+    "version": "0.3.83",
     "repository": {
         "type": "git",
         "url": "https://github.com/sinnayuh/angel-lsp-pcx"
@@ -90,16 +90,41 @@
         ],
         "commands": [
             {
-                "command": "angelScript.debug.printGlobalScope",
-                "title": "AngelScript: Print Global Scope in Current File"
-            },
-            {
                 "command": "angelScript.bundle",
-                "title": "AngelScript: Bundle Script"
+                "title": "Bundle Script",
+                "category": "AngelScript"
             },
             {
                 "command": "angelScript.bundleStripped",
-                "title": "AngelScript: Bundle Script (Strip Comments)"
+                "title": "Bundle Script (Strip Comments)",
+                "category": "AngelScript"
+            },
+            {
+                "command": "angelScript.openSettings",
+                "title": "View Settings",
+                "category": "AngelScript"
+            },
+            {
+                "command": "angelScript.openDocs",
+                "title": "Open Perception Docs",
+                "category": "AngelScript"
+            },
+            {
+                "command": "angelScript.initProject",
+                "title": "Initialize Project",
+                "category": "AngelScript"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "angelScript.bundle",
+                "key": "ctrl+alt+b",
+                "when": "resourceExtname == .as"
+            },
+            {
+                "command": "angelScript.bundleStripped",
+                "key": "ctrl+alt+shift+b",
+                "when": "resourceExtname == .as"
             }
         ],
         "taskDefinitions": [

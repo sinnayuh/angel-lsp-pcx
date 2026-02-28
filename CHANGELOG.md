@@ -1,5 +1,38 @@
 # Change Log
 
+## [0.3.83] — Perception Fork Initial Release
+
+### Added
+- **Built-in Perception API** — full `perception.as.predefined` baked into the extension covering all Perception modules: proc, GUI, render, input, math, mutex, atomics, networking, JSON, file system, system, Win, Unicorn engine, Zydis encoder, SIMD intrinsics, hash containers, and engine-specific helpers. No `as.predefined` file needed.
+- **`string` class** with `[BuiltinString]` metadata, full operator overloads, and all standard string methods — fixes `'string' is not defined` warnings.
+- **Standard math** — `abs`, `sin`, `cos`, `tan`, `acos`, `asin`, `atan`, `atan2`, `log`, `pow`, `sqrt`, `ceil`, `floor` and overloads.
+- **Math constants & utilities** — `M_PI`, `RAD2DEG`, `DEG2RAD`, `clamp`, `lerp`, `smoothstep`, `is_nan`, `is_inf`, and more.
+- **`dictionaryValue`, `grid<T>`, `hash_set`, `hash_map`** — previously missing core types.
+- **`random_*` functions** — `random_seed`, `random`, `random_range`, `random_int`, `random_bool`, `random_gaussian`, `random_unit_vec2/3`.
+- **Extended `proc_t`** — `wu8/16/32/64`, bulk r/w (`r128/256/512`), `read_struct`, `alloc_vm`, `virtual_query`, `scan_bytes`, `scan_all_u32/u64`, `cs2_*` helpers.
+- **Extended `ws_t`** — `send_json`, `send_binary`, `recv`, `poll`, `close`.
+- **Extended render** — `draw_arc`, `draw_polygon`, `create_bitmap`, `draw_bitmap`, `clip_push/pop`, `get_char_advance`, `draw_text` `scale_with_view` overload.
+- **Extended Win API** — `WindowInfo` class, `get_all_hwnds`, `post_message`, `send_mouse_input`, `is_foreground_window`, `get_tickcount64`.
+- **Multi-file bundler** — `AngelScript: Bundle Script` and `AngelScript: Bundle Script (Strip Comments)` commands with pre-build diagnostic check. `angelscript-bundle` task type for `.vscode/tasks.json`.
+- **Keybindings** — `Ctrl+Alt+B` to bundle, `Ctrl+Alt+Shift+B` to bundle (stripped).
+- **Status bar item** — `$(code) Perception AS` visible when a `.as` file is active; click opens a command quick-pick.
+- **`AngelScript: Initialize Project`** — scaffolds `.vscode/tasks.json`, `source/main.as`, and `output/` in one click.
+- **`AngelScript: Open Perception Docs`** — opens `docs.perception.cx` in the browser.
+- **`AngelScript: View Settings`** — opens VS Code settings filtered to `angelScript.*`.
+- **Perception-specific snippets** — `pcx-main`, `pcx-callback`, `pcx-attach`, `pcx-gui`, `pcx-mutex`, `pcx-esp`, `pcx-w2s`, `pcx-class`, `pcx-rip`.
+- **CI/CD pipeline** — `ci.yml` for branch builds; `release.yml` auto-bumps patch version, packages VSIX, and publishes a GitHub Release on every push to `main`.
+
+### Fixed
+- `TypeError: Cannot read properties of undefined (reading 'request')` in server tests caused by the built-in predefined being loaded during class field initialization before `Inspector` was fully constructed.
+- Server tests polluted by Perception API symbols — isolated via `ANGEL_LSP_TEST=1` environment variable set in `test/setup.ts`.
+
+### Changed
+- Removed examples for OpenSiv3D, Sven Co-op, and Trackmania — this extension is Perception-specific.
+- Bundler output channel reused across runs (cleared before each build) instead of creating a new channel each time.
+- Command palette cleaned up: debug `Print Global Scope` command removed; all commands grouped under `AngelScript` category.
+
+---
+
 ## [Perception Fork]
 
 - Bundled the full Perception AngelScript API (`proc_t`, GUI widgets, render, math, mutex, atomics, networking, JSON, system, Win, engine helpers) as a built-in predefined — no `as.predefined` setup required.
