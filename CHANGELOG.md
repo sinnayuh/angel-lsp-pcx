@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.3.86] — Implicit Inclusion & CI Improvements
+
+### Fixed
+- **Cross-file `Undefined scope` warnings** — `implicitMutualInclusion` now works correctly without a user `as.predefined` file. When enabled, the LSP scans the file's directory tree to discover all sibling `.as` files and merges their scopes together automatically.
+- **Mocha process hanging in CI** — added `--exit` flag to `.mocharc.json` so the test runner force-quits after completion instead of waiting on open async handles from the LSP's internal task scheduler.
+
+### Changed
+- **CI/CD switched to Bun** — both `ci.yml` and `release.yml` now use `oven-sh/setup-bun` + `bun install` instead of `npm ci`, cutting install time significantly.
+- **Server tests removed from CI** — test runs are now local-only (`npm test --prefix server`); the TypeScript compiler still catches type errors on every push.
+- **`vsce package --no-dependencies`** — skips redundant bundling of already-excluded node_modules into the VSIX.
+- **Version bump no longer commits `package-lock.json`** — only `package.json` is committed by the release bot since Bun doesn't update the npm lockfile.
+
+---
+
 ## [0.3.83] — Perception Fork Initial Release
 
 ### Added
