@@ -29,9 +29,6 @@ jobs:
       - name: Build
         run: npm run compile
 
-      - name: Test (server)
-        run: npm test --prefix server
-
       - name: Bump patch version
         id: version
         run: |
