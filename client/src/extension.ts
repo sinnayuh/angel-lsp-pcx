@@ -283,37 +283,57 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
     const srcPath = path.resolve(wsRoot, srcInput.trim());
     const outPath = path.resolve(wsRoot, outInput.trim());
 
-    // Pre-build diagnostic check
-    const allDiagnostics = vscode.languages.getDiagnostics();
-    const errors: string[] = [];
-    for (const [uri, diags] of allDiagnostics) {
-        if (!uri.fsPath.endsWith('.as')) continue;
-        const fileErrors = diags.filter(d => d.severity === vscode.DiagnosticSeverity.Error);
-        if (fileErrors.length > 0) {
-            errors.push(`${path.relative(wsRoot, uri.fsPath)}: ${fileErrors.length} error(s)`);
-        }
-    }
-
-    if (errors.length > 0) {
-        const proceed = await vscode.window.showWarningMessage(
-            `AngelScript Bundle: ${errors.length} file(s) have errors:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n…and ${errors.length - 5} more` : ''}\n\nBundling may produce invalid output.`,
-            {modal: true},
-            'Continue Anyway',
-            'Cancel'
-        );
-        if (proceed !== 'Continue Anyway') return;
-    }
-
-    const bundlerScript = context.asAbsolutePath(path.join('scripts', 'bundler.js'));
-    const bundlerArgs = [bundlerScript, srcPath, outPath];
-    if (strip) bundlerArgs.push('--strip');
-
     if (!s_bundlerChannel) {
         s_bundlerChannel = vscode.window.createOutputChannel('AngelScript Bundler');
     }
     const outputChannel = s_bundlerChannel;
     outputChannel.clear();
     outputChannel.show(true);
+
+    // Pre-build diagnostic check — print errors as clickable file:line:col links
+    const allDiagnostics = vscode.languages.getDiagnostics();
+    interface DiagEntry { rel: string; line: number; col: number; message: string; }
+    const errorEntries: DiagEntry[] = [];
+
+    for (const [uri, diags] of allDiagnostics) {
+        if (!uri.fsPath.endsWith('.as')) continue;
+        const rel = path.relative(wsRoot, uri.fsPath);
+        for (const d of diags) {
+            if (d.severity === vscode.DiagnosticSeverity.Error) {
+                errorEntries.push({
+                    rel,
+                    line: d.range.start.line + 1,
+                    col:  d.range.start.character + 1,
+                    message: d.message,
+                });
+            }
+        }
+    }
+
+    if (errorEntries.length > 0) {
+        const fileCount = new Set(errorEntries.map(e => e.rel)).size;
+        outputChannel.appendLine(`[Pre-build] ⚠ ${errorEntries.length} error(s) in ${fileCount} file(s) — bundling may produce invalid output`);
+        outputChannel.appendLine('');
+        for (const e of errorEntries) {
+            // VS Code auto-linkifies "relative/path.as:line:col" in the Output panel
+            outputChannel.appendLine(`  ${e.rel}:${e.line}:${e.col}: ${e.message}`);
+        }
+        outputChannel.appendLine('');
+
+        const proceed = await vscode.window.showWarningMessage(
+            `AngelScript Bundle: ${errorEntries.length} error(s) in ${fileCount} file(s). See Output panel for details.`,
+            'Continue Anyway',
+            'Cancel'
+        );
+        if (proceed !== 'Continue Anyway') return;
+
+        outputChannel.appendLine('[Pre-build] Continuing despite errors...');
+        outputChannel.appendLine('');
+    }
+    const bundlerScript = context.asAbsolutePath(path.join('scripts', 'bundler.js'));
+    const bundlerArgs = [bundlerScript, srcPath, outPath];
+    if (strip) bundlerArgs.push('--strip');
+
     outputChannel.appendLine(`[Bundle] Starting${strip ? ' (strip comments)' : ''}...`);
     outputChannel.appendLine(`[Bundle]   src: ${srcPath}`);
     outputChannel.appendLine(`[Bundle]   out: ${outPath}`);

@@ -47,6 +47,12 @@ let s_hasDiagnosticRelatedInformationCapability = false;
 s_connection.onInitialize((params: lsp.InitializeParams) => {
     const capabilities = params.capabilities;
 
+    // Pass the workspace root to the inspector so implicit mutual inclusion
+    // is bounded to the open workspace folder rather than climbing the filesystem.
+    const workspaceRoot =
+        params.workspaceFolders?.[0]?.uri ?? params.rootUri ?? undefined;
+    if (workspaceRoot) s_inspector.setWorkspaceRoot(workspaceRoot);
+
     // Does the client support the `workspace/configuration` request?
     // If not, we fall back using global settings.
 

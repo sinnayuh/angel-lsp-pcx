@@ -142,11 +142,15 @@ function consumeNumber(tokenizer: TokenizerState) {
     }
 
     // Check if it has an exponent
-    // e.g. 1e+3, 1E-3
-    if (/^[eE]$/.test(tokenizer.next(f)) && /^[+-]$/.test(tokenizer.next(f + 1)) && isDigit(tokenizer, f + 2)) {
-        f += 3;
-        while (isDigit(tokenizer, f)) f++;
-        numberLiteral = NumberLiteral.Double;
+    // e.g. 1e8, 1e+3, 1E-3 (sign is optional)
+    if (/^[eE]$/.test(tokenizer.next(f))) {
+        let ef = f + 1;
+        if (/^[+-]$/.test(tokenizer.next(ef))) ef++;
+        if (isDigit(tokenizer, ef)) {
+            f = ef + 1;
+            while (isDigit(tokenizer, f)) f++;
+            numberLiteral = NumberLiteral.Double;
+        }
     }
 
     if (f >= 1) {

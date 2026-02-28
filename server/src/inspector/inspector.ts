@@ -92,6 +92,10 @@ export class Inspector {
         this._diagnosticsCallback = callback;
     }
 
+    public setWorkspaceRoot(uri: string): void {
+        this._analysisResolver.setWorkspaceRoot(uri);
+    }
+
     private createRecordAndInsert(uri: string, content: string): InspectRecord {
         const record = createEmptyRecord(uri, content);
         this._inspectRecords.set(uri, record);

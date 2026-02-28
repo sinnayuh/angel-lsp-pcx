@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.3.87] — Workspace-scoped Inclusion & Bundler Error Panel
+
+### Added
+- **Bundler error panel** — pre-build LSP errors are now printed in the **AngelScript Bundler** output panel as `file:line:col: message` entries before the bundle runs. VS Code auto-linkifies each line so you can Ctrl+click straight to the offending code. The blocking modal dialog is replaced with a small non-modal notification.
+
+### Fixed
+- **Implicit mutual inclusion no longer escapes the workspace** — the file-discovery scan is now bounded to the VS Code `${workspaceFolder}` URI received from the LSP `InitializeParams`. Previously it walked all parent directories and picked up `.as` files from completely unrelated sibling projects.
+- **Scientific notation literals (`1e8`)** — the tokenizer now correctly parses exponents without an explicit sign (`1e8`, `1E6`) in addition to the signed forms (`1e+3`, `1E-3`). Fixes spurious `Expected ')'` errors on lines using float literals like `> 1e8`.
+
+### Changed
+- `Inspector` and `AnalysisResolver` now accept and store a workspace root URI (`setWorkspaceRoot`), called once from `server.onInitialize` using `params.workspaceFolders[0].uri`.
+
+---
+
 ## [0.3.86] — Implicit Inclusion & CI Improvements
 
 ### Fixed

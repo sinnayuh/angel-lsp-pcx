@@ -56,6 +56,9 @@ export class AnalysisResolver {
     // is active but no user as.predefined is present.
     private readonly _scannedImplicitDirectories: Set<string> = new Set();
 
+    // Set by the server from LSP InitializeParams — the VS Code workspace folder URI.
+    private _workspaceRootUri: string | undefined = undefined;
+
     public constructor(
         public readonly _inspectRecords: Map<string, PartialInspectRecord>,
         private readonly _inspectRequest: InspectRequest,
@@ -68,6 +71,11 @@ export class AnalysisResolver {
      * Must be called AFTER the owning Inspector has finished initializing all
      * its class fields, so that inspectFile → _analysisResolver.request() is safe.
      */
+    public setWorkspaceRoot(uri: string): void {
+        // Normalise: ensure it ends with '/' so startsWith checks work correctly.
+        this._workspaceRootUri = uri.endsWith('/') ? uri : uri + '/';
+    }
+
     public loadBuiltInPredefined(): void {
         if (this._builtInPredefinedUri === undefined) return;
         if (this._resolvedPredefinedFilepaths.has(this._builtInPredefinedUri)) return;
@@ -324,15 +332,14 @@ export class AnalysisResolver {
         }
 
         // No user as.predefined found. When implicitMutualInclusion is enabled, scan
-        // the file's parent directories so sibling .as files are discovered and added
-        // to _inspectRecords — making them visible to the include-all fallback above.
+        // the workspace root so all project .as files are discovered. The workspace root
+        // is supplied by the LSP client (${workspaceFolder}) via setWorkspaceRoot().
+        // Fall back to the file's own directory if no workspace root is known yet.
         if (getGlobalSettings().implicitMutualInclusion) {
-            for (const dir of dirs) {
-                const dirUri = dir + '/';
-                if (!this._scannedImplicitDirectories.has(dirUri)) {
-                    this._scannedImplicitDirectories.add(dirUri);
-                    this.inspectUnderDirectory(dirUri);
-                }
+            const scanRoot = this._workspaceRootUri ?? (dirs[0] ? dirs[0] + '/' : undefined);
+            if (scanRoot !== undefined && !this._scannedImplicitDirectories.has(scanRoot)) {
+                this._scannedImplicitDirectories.add(scanRoot);
+                this.inspectUnderDirectory(scanRoot);
             }
         }
 
