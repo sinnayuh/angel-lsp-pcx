@@ -18,7 +18,10 @@ import {moveDiagnosticsByChanges} from "../service/contentChangeApplier";
 
 // Resolve the built-in Perception predefined file from the compiled output directory.
 // At runtime __dirname is server/out/inspector/, so we navigate up to server/out/predefined/.
+// Returns undefined when running under the test suite (ANGEL_LSP_TEST=1) so the Perception
+// API symbols don't pollute assertion-level completion/analyzer test expectations.
 function resolveBuiltInPredefinedUri(): string | undefined {
+    if (process.env.ANGEL_LSP_TEST === '1') return undefined;
     try {
         const filePath = path.resolve(__dirname, '..', 'predefined', 'perception.as.predefined');
         return pathToFileURL(filePath).toString();
@@ -78,6 +81,12 @@ export class Inspector {
         (params) => this._diagnosticsCallback(params),
         s_builtInPredefinedUri
     );
+
+    constructor() {
+        // All class fields are now initialized — safe to trigger the built-in
+        // predefined load, which calls inspectFile → _analysisResolver.request().
+        this._analysisResolver.loadBuiltInPredefined();
+    }
 
     public registerDiagnosticsCallback(callback: DiagnosticsCallback): void {
         this._diagnosticsCallback = callback;

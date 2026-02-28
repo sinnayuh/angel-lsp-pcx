@@ -57,15 +57,20 @@ export class AnalysisResolver {
         private readonly _inspectRequest: InspectRequest,
         private readonly _diagnosticsCallback: DiagnosticsCallback,
         private readonly _builtInPredefinedUri: string | undefined = undefined,
-    ) {
-        // Register the built-in Perception predefined file immediately so it is
-        // available to every .as file without any user configuration.
-        if (_builtInPredefinedUri !== undefined) {
-            const content = readFileContent(_builtInPredefinedUri);
-            if (content !== undefined) {
-                this._inspectRequest(_builtInPredefinedUri, content);
-                this._resolvedPredefinedFilepaths.add(_builtInPredefinedUri);
-            }
+    ) { }
+
+    /**
+     * Load the built-in Perception predefined file into the inspect records.
+     * Must be called AFTER the owning Inspector has finished initializing all
+     * its class fields, so that inspectFile → _analysisResolver.request() is safe.
+     */
+    public loadBuiltInPredefined(): void {
+        if (this._builtInPredefinedUri === undefined) return;
+        if (this._resolvedPredefinedFilepaths.has(this._builtInPredefinedUri)) return;
+        const content = readFileContent(this._builtInPredefinedUri);
+        if (content !== undefined) {
+            this._inspectRequest(this._builtInPredefinedUri, content);
+            this._resolvedPredefinedFilepaths.add(this._builtInPredefinedUri);
         }
     }
 
