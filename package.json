@@ -229,7 +229,12 @@
                     "items": {
                         "type": "string"
                     },
-                    "default": ["output", "node_modules", ".git", "reference"],
+                    "default": [
+                        "output",
+                        "node_modules",
+                        ".git",
+                        "reference"
+                    ],
                     "description": "Directory names to skip when indexing the workspace for implicit mutual inclusion. Add any large generated or third-party folders here to speed up startup."
                 },
                 "angelScript.implicitMutualInclusion": {
