@@ -52,6 +52,10 @@ export class AnalysisResolver {
 
     private readonly _resolvedPredefinedFilepaths: Set<string> = new Set();
 
+    // Tracks directories already scanned for .as files when implicitMutualInclusion
+    // is active but no user as.predefined is present.
+    private readonly _scannedImplicitDirectories: Set<string> = new Set();
+
     public constructor(
         public readonly _inspectRecords: Map<string, PartialInspectRecord>,
         private readonly _inspectRequest: InspectRequest,
@@ -77,6 +81,7 @@ export class AnalysisResolver {
     public reset() {
         this._analysisQueue.clear();
         this._resolvedPredefinedFilepaths.clear();
+        this._scannedImplicitDirectories.clear();
 
         // Re-register the built-in predefined after a reset so it is always available.
         if (this._builtInPredefinedUri !== undefined) {
@@ -249,13 +254,21 @@ export class AnalysisResolver {
         includeSet.delete(record.uri);
 
         if (getGlobalSettings().implicitMutualInclusion) {
-            // If implicit mutual inclusion is enabled, include all files under the directory where 'as.predefined' is located.
-            if (record.uri.endsWith(predefinedFileName) === false && predefinedUri !== undefined) {
-                const predefinedDirectory = resolveUri(predefinedUri, '.');
-                return [...Array.from(includeSet),
-                    ...Array.from(this._inspectRecords.keys())
-                        .filter(uri => uri.startsWith(predefinedDirectory))
-                        .filter(uri => uri.endsWith('.as') && uri !== record.uri)];
+            if (record.uri.endsWith(predefinedFileName) === false) {
+                if (predefinedUri !== undefined) {
+                    // Original behaviour: include all .as files under the predefined directory.
+                    const predefinedDirectory = resolveUri(predefinedUri, '.');
+                    return [...Array.from(includeSet),
+                        ...Array.from(this._inspectRecords.keys())
+                            .filter(uri => uri.startsWith(predefinedDirectory))
+                            .filter(uri => uri.endsWith('.as') && uri !== record.uri)];
+                } else {
+                    // No user as.predefined — include every .as file currently known in the
+                    // workspace (i.e. all files the LSP has opened or discovered so far).
+                    return [...Array.from(includeSet),
+                        ...Array.from(this._inspectRecords.keys())
+                            .filter(uri => uri.endsWith('.as') && uri !== record.uri)];
+                }
             }
         }
 
@@ -294,7 +307,6 @@ export class AnalysisResolver {
             if (this._inspectRecords.get(predefinedUri) !== undefined &&
                 this._resolvedPredefinedFilepaths.has(predefinedUri)
             ) {
-                // Return the record if the file has already been analyzed
                 return predefinedUri;
             }
 
@@ -302,16 +314,26 @@ export class AnalysisResolver {
                 const content = readFileContent(predefinedUri);
                 if (content === undefined) continue;
 
-                // If the file is found, inspect it
                 this._inspectRequest(predefinedUri, content);
             }
 
-            // Inspect all files under the directory where 'as.predefined' is located
             this.inspectUnderDirectory(resolveUri(predefinedUri, '.'));
-
             this._resolvedPredefinedFilepaths.add(predefinedUri);
 
             return predefinedUri;
+        }
+
+        // No user as.predefined found. When implicitMutualInclusion is enabled, scan
+        // the file's parent directories so sibling .as files are discovered and added
+        // to _inspectRecords — making them visible to the include-all fallback above.
+        if (getGlobalSettings().implicitMutualInclusion) {
+            for (const dir of dirs) {
+                const dirUri = dir + '/';
+                if (!this._scannedImplicitDirectories.has(dirUri)) {
+                    this._scannedImplicitDirectories.add(dirUri);
+                    this.inspectUnderDirectory(dirUri);
+                }
+            }
         }
 
         return undefined;
