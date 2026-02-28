@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.91] — Predefined Fixes
+
+### Fixed
+- **`matrix4x4` subscript operator** — added `opIndex(int)` and `const opIndex(int)` to the `matrix4x4` class declaration so `mat[0] = x` and `x = mat[0]` no longer produce "operator 'opIndex' is not defined" warnings.
+
+---
+
 ## [0.3.89] — Indexing Progress & Faster Workspace Scan
 
 ### Added

@@ -809,6 +809,8 @@ class quaternion {
 
 class matrix4x4 {
     matrix4x4();
+    double &opIndex(int index);
+    const double &opIndex(int index) const;
     matrix4x4 opMul(const matrix4x4 &in other) const;
     vector3 transform(const vector3 &in v) const;
     void read(proc_t &in proc, uint64 addr);
