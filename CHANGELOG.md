@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.3.92] — Bundler Settings
+
+### Added
+- **Bundler configuration settings** — three new settings under `angelScript.bundler.*` to configure default bundler behavior:
+  - `sourceDirectory` (default: `"source"`) — default source directory for bundling `.as` files
+  - `outputFile` (default: `"output/bundled.as"`) — default output file path for the bundled script
+  - `stripComments` (default: `true`) — whether to strip comments by default when bundling
+- Settings are now used as defaults in the bundle command input boxes and when initializing a new project via `AngelScript: Initialize Project`.
+
+---
+
 ## [0.3.91] — Predefined Fixes
 
 ### Fixed

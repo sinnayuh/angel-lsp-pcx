@@ -4,7 +4,7 @@
     "description": "AngelScript Language Server pre-configured for Perception.cx — IntelliSense, type checking, bundler, and full API coverage out of the box.",
     "author": "sinnayuh",
     "license": "MIT",
-    "version": "0.3.91",
+    "version": "0.3.92",
     "repository": {
         "type": "git",
         "url": "https://github.com/sinnayuh/angel-lsp-pcx"
@@ -313,6 +313,24 @@
                     ],
                     "default": "off",
                     "description": "Traces the communication between VS Code and the language server."
+                },
+                "angelScript.bundler.sourceDirectory": {
+                    "scope": "window",
+                    "type": "string",
+                    "default": "source",
+                    "description": "Default source directory for bundling .as files (relative to workspace root)."
+                },
+                "angelScript.bundler.outputFile": {
+                    "scope": "window",
+                    "type": "string",
+                    "default": "output/bundled.as",
+                    "description": "Default output file path for the bundled script (relative to workspace root)."
+                },
+                "angelScript.bundler.stripComments": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to strip comments by default when bundling."
                 }
             }
         },

@@ -11,3 +11,4 @@ CLAUDE.md
 *.vsix
 .cursorindexingignore
 pcx-docs/
+.claude/

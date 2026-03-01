@@ -198,6 +198,12 @@ async function initProject(): Promise<void> {
     const wsRoot = folders[0].uri.fsPath;
     const created: string[] = [];
 
+    // Read bundler settings for default values
+    const config = vscode.workspace.getConfiguration('angelScript.bundler');
+    const defaultSrc = config.get<string>('sourceDirectory', 'source');
+    const defaultOut = config.get<string>('outputFile', 'output/bundled.as');
+    const defaultStrip = config.get<boolean>('stripComments', true);
+
     // ── .vscode/tasks.json ───────────────────────────────────────────────────
     const vscodeDir = path.join(wsRoot, '.vscode');
     const tasksFile = path.join(vscodeDir, 'tasks.json');
@@ -210,9 +216,9 @@ async function initProject(): Promise<void> {
                 {
                     "label": "Bundle Perception Script",
                     "type": "angelscript-bundle",
-                    "src": "source",
-                    "out": "output/script.as",
-                    "strip": true,
+                    "src": defaultSrc,
+                    "out": defaultOut,
+                    "strip": defaultStrip,
                     "group": {
                         "kind": "build",
                         "isDefault": true
@@ -224,7 +230,7 @@ async function initProject(): Promise<void> {
     }
 
     // ── source/main.as ───────────────────────────────────────────────────────
-    const sourceDir = path.join(wsRoot, 'source');
+    const sourceDir = path.join(wsRoot, defaultSrc);
     const mainFile = path.join(sourceDir, 'main.as');
 
     if (!fs.existsSync(mainFile)) {
@@ -239,14 +245,14 @@ void on_unload()
 {
 }
 `);
-        created.push('source/main.as');
+        created.push(`${defaultSrc}/main.as`);
     }
 
     // ── output/ directory ────────────────────────────────────────────────────
-    const outputDir = path.join(wsRoot, 'output');
+    const outputDir = path.join(wsRoot, path.dirname(defaultOut));
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, {recursive: true});
-        created.push('output/');
+        created.push(`${path.dirname(defaultOut)}/`);
     }
 
     if (created.length === 0) {
@@ -276,10 +282,20 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
 
     const wsRoot = workspaceFolders[0].uri.fsPath;
 
+    // Read bundler settings for default values
+    const config = vscode.workspace.getConfiguration('angelScript.bundler');
+    const defaultSrc = config.get<string>('sourceDirectory', 'source');
+    const defaultOut = config.get<string>('outputFile', 'output/bundled.as');
+    const defaultStrip = config.get<boolean>('stripComments', true);
+
+    // Use setting default for strip if user invoked bundle command (not bundleStripped)
+    // bundleStripped explicitly forces strip=true
+    const effectiveStrip = strip || defaultStrip;
+
     const srcInput = await vscode.window.showInputBox({
         title: 'AngelScript Bundle — Source Directory',
         prompt: 'Directory containing your .as files (relative to workspace root)',
-        value: 'source',
+        value: defaultSrc,
         validateInput: (v) => v.trim().length === 0 ? 'Source directory cannot be empty' : undefined,
     });
     if (srcInput === undefined) return;
@@ -287,7 +303,7 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
     const outInput = await vscode.window.showInputBox({
         title: 'AngelScript Bundle — Output File',
         prompt: 'Output file path (relative to workspace root)',
-        value: 'output/bundled.as',
+        value: defaultOut,
         validateInput: (v) => v.trim().length === 0 ? 'Output path cannot be empty' : undefined,
     });
     if (outInput === undefined) return;
@@ -344,9 +360,9 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
     }
     const bundlerScript = context.asAbsolutePath(path.join('scripts', 'bundler.js'));
     const bundlerArgs = [bundlerScript, srcPath, outPath];
-    if (strip) bundlerArgs.push('--strip');
+    if (effectiveStrip) bundlerArgs.push('--strip');
 
-    outputChannel.appendLine(`[Bundle] Starting${strip ? ' (strip comments)' : ''}...`);
+    outputChannel.appendLine(`[Bundle] Starting${effectiveStrip ? ' (strip comments)' : ''}...`);
     outputChannel.appendLine(`[Bundle]   src: ${srcPath}`);
     outputChannel.appendLine(`[Bundle]   out: ${outPath}`);
 
