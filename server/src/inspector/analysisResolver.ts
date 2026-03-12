@@ -205,9 +205,16 @@ export class AnalysisResolver {
 
         record.isAnalyzerPending = false;
 
+        // Never surface diagnostics for predefined files (built-in or user as.predefined) —
+        // they use generic syntax (T, K, V) and duplicate built-in symbols that the analyzer
+        // cannot resolve, producing spurious errors that pollute the Problems panel.
+        const isPredefined =
+            record.uri === this._builtInPredefinedUri ||
+            record.uri.endsWith('.as.predefined');
+
         this._diagnosticsCallback({
             uri: record.uri,
-            diagnostics: [...record.diagnosticsInParser, ...record.diagnosticsInAnalyzer]
+            diagnostics: isPredefined ? [] : [...record.diagnosticsInParser, ...record.diagnosticsInAnalyzer]
         });
 
         logger.message(`(${process.memoryUsage().heapUsed / 1024 / 1024} MB used)`);

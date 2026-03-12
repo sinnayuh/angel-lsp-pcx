@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.93] — Suppress Predefined Diagnostics
+
+### Fixed
+- **No more errors from `perception.as.predefined`** — the LSP no longer publishes diagnostics for predefined files (the built-in Perception API or any user `.as.predefined`). Generic type parameters (`T`, `K`, `V`) and deliberately duplicated built-in symbols were producing 60+ spurious warnings in the Problems panel.
+
+---
+
 ## [0.3.92] — Bundler Settings
 
 ### Added
