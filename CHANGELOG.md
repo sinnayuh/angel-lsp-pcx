@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.3.94] — Sound API & Memory Scan Fixes
+
+### Added
+- **Sound API** — added all Sound API declarations (`load_sound`, `play_sound`, `free_sound`, `stop_sound`, `stop_all_sounds`, `is_sound_playing`, `set_sound_volume`, `set_sound_pan`) to the predefined file.
+- **New memory scan functions** — added `scan_float`, `scan_double`, `scan_string`, and `scan_wstring` to `proc_t`.
+
+### Fixed
+- **Memory Scan API signatures** — updated `get_vad_snapshot` and all `scan_*` functions to match the current Perception API (return `array<uint64>@` / `array<dictionary@>@` instead of void with out parameters, `heap_only` defaults to `false`).
+- Removed obsolete `scan_bytes`, `scan_all_bytes`, `scan_all_u32`, `scan_all_u64` declarations.
+
+---
+
 ## [0.3.93] — Suppress Predefined Diagnostics
 
 ### Fixed

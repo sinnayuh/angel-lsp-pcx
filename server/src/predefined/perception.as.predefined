@@ -344,13 +344,13 @@ class proc_t {
     uint64 get_proc_address(uint64 module_base, const string &in export_name) const;
     uint64 get_import_rdata_address(uint64 module_base, const string &in import_name) const;
     bool virtual_query(uint64 address, uint64 &out region_start, uint64 &out region_size, uint32 &out protection, bool &out heap_likely) const;
-    void get_vad_snapshot(bool heap_likely_only, array<dictionary>@ &out regions) const;
-    void scan_bytes(const array<uint8> &in pattern, array<uint64> &out result, bool heap_likely_only) const;
-    void scan_all_bytes(array<uint64> &out result, bool heap_likely_only) const;
-    void scan_u32(uint32 value, array<uint64> &out result, bool heap_likely_only) const;
-    void scan_u64(uint64 value, array<uint64> &out result, bool heap_likely_only) const;
-    void scan_all_u32(array<uint64> &out result, bool heap_likely_only) const;
-    void scan_all_u64(array<uint64> &out result, bool heap_likely_only) const;
+    array<dictionary@>@ get_vad_snapshot(bool heap_likely_only) const;
+    array<uint64>@ scan_u32(uint32 value, bool heap_only = false) const;
+    array<uint64>@ scan_u64(uint64 value, bool heap_only = false) const;
+    array<uint64>@ scan_float(float value, bool heap_only = false) const;
+    array<uint64>@ scan_double(double value, bool heap_only = false) const;
+    array<uint64>@ scan_string(const string &in value, bool heap_only = false) const;
+    array<uint64>@ scan_wstring(const string &in value, bool heap_only = false) const;
 
     // ── Game-specific helpers ────────────────────────────────────────────────
     uint64 cs2_get_interface(uint64 module_base, const string &in name) const;
@@ -543,6 +543,19 @@ bool write_file_binary(const string &in path, const array<uint8> &in data);
 bool read_file_binary(const string &in path, array<uint8> &out data);
 bool append_file_binary(const string &in path, const array<uint8> &in data);
 uint64 get_file_size(const string &in path);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOUND API
+// ─────────────────────────────────────────────────────────────────────────────
+
+uint64 load_sound(const string &in path);
+void free_sound(uint64 handle);
+uint64 play_sound(uint64 sound, float volume = 1.0f, float pan = 0.0f, bool loop = false);
+void stop_sound(uint64 instance);
+void stop_all_sounds();
+bool is_sound_playing(uint64 instance);
+void set_sound_volume(uint64 instance, float volume);
+void set_sound_pan(uint64 instance, float pan);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // JSON
