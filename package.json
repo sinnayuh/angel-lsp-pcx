@@ -4,7 +4,7 @@
     "description": "AngelScript Language Server pre-configured for Perception.cx — IntelliSense, type checking, bundler, and full API coverage out of the box.",
     "author": "sinnayuh",
     "license": "MIT",
-    "version": "0.3.94",
+    "version": "0.3.95",
     "repository": {
         "type": "git",
         "url": "https://github.com/sinnayuh/angel-lsp-pcx"
