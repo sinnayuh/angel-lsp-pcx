@@ -1,5 +1,32 @@
 # Change Log
 
+## [0.3.95] — Multi-Project Support
+
+### Added
+- **Multi-project workspaces** — new `angelScript.projects` array setting to define multiple AngelScript projects within a single workspace. Each project has its own source directory, output file, and LSP mode.
+  ```json
+  "angelScript.projects": [
+      { "name": "Main", "sourceDirectory": "source", "outputFile": "C:\\output\\main.as", "lspMode": "full" },
+      { "name": "Tools", "sourceDirectory": "sourceTwo", "outputFile": "C:\\output\\tools.as", "lspMode": "syntaxOnly" }
+  ]
+  ```
+- **Per-project LSP modes** — `"full"` enables all IntelliSense features; `"syntaxOnly"` provides syntax highlighting and parser errors only, ideal for secondary projects you aren't actively developing.
+- **Project isolation** — files in different projects no longer cross-pollinate. Symbols, completions, go-to-definition, references, and rename are all scoped to the same project. `implicitMutualInclusion` is also scoped per-project.
+- **`Bundle Project...` command** — quick-pick to select and bundle a specific project.
+- **`Bundle All Projects` command** — bundles all defined projects sequentially with per-project output.
+- **Auto-provided build tasks** — the task provider now auto-generates `angelscript-bundle` tasks for each defined project, visible in `Tasks: Run Task`.
+- **Status bar menu** — shows project-specific commands when projects are defined.
+
+### Changed
+- `Ctrl+Alt+B` redirects to the project picker when projects are defined.
+- `Initialize Project` now scaffolds `tasks.json` and `main.as` for all defined projects.
+- Cross-file LSP features (definition, references, rename, code actions) now search only within the same project in multi-project mode.
+
+### Backwards Compatibility
+- When no projects are defined, everything works exactly as before. The existing `angelScript.bundler.*` settings continue to work for single-project workflows.
+
+---
+
 ## [0.3.94] — Sound API & Memory Scan Fixes
 
 ### Added

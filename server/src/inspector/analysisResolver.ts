@@ -3,7 +3,7 @@ import {TokenObject, TokenString} from "../compiler_tokenizer/tokenObject";
 import {NodeScript} from "../compiler_parser/nodes";
 import {DelayedTask} from "../utils/delayedTask";
 import {PublishDiagnosticsParams} from "vscode-languageserver-protocol";
-import {getGlobalSettings} from "../core/settings";
+import {getGlobalSettings, getProjectForUri, isMultiProjectMode} from "../core/settings";
 import {PreprocessedOutput} from "../compiler_parser/parserPreprocess";
 import {getParentDirectoryList, readFileContent, resolveIncludeUri, resolveUri} from "../service/fileUtils";
 import {analyzerDiagnostic} from "../compiler_analyzer/analyzerDiagnostic";
@@ -180,6 +180,18 @@ export class AnalysisResolver {
     }
 
     private analyzeFile(record: PartialInspectRecord) {
+        // In multi-project mode, skip full analysis for syntaxOnly projects.
+        // Parser diagnostics (syntax errors) are still reported from the inspect step.
+        const project = getProjectForUri(record.uri);
+        if (project !== undefined && project.config.lspMode === 'syntaxOnly') {
+            record.isAnalyzerPending = false;
+            this._diagnosticsCallback({
+                uri: record.uri,
+                diagnostics: [...record.diagnosticsInParser]
+            });
+            return;
+        }
+
         const predefinedUri = this.findPredefinedUri(record.uri);
 
         logger.message(`[Analyzer]\n${record.uri}`);
@@ -229,7 +241,9 @@ export class AnalysisResolver {
     private reanalyzeFilesWithDependencyInternal(resolvedSet: Set<string>, targetUri: string, reanalyzeDependents: boolean) {
         if (resolvedSet.has(targetUri)) return;
 
+        const projectFilter = this.createProjectFilter(targetUri);
         const dependentFiles = Array.from(this._inspectRecords.values()) // Get all records
+            .filter(r => projectFilter(r.uri)) // Only consider files in the same project
             .filter(r =>
                 this.resolveIncludeAbsolutePaths(r, this.findPredefinedUri(r.uri)) // Get include paths of each record
                     .some(uri => uri === targetUri) // Check if the target file is included
@@ -276,19 +290,24 @@ export class AnalysisResolver {
 
         if (getGlobalSettings().implicitMutualInclusion) {
             if (record.uri.endsWith(predefinedFileName) === false) {
+                // In multi-project mode, only include files from the same project.
+                const projectFilter = this.createProjectFilter(record.uri);
+
                 if (predefinedUri !== undefined) {
                     // Original behaviour: include all .as files under the predefined directory.
                     const predefinedDirectory = resolveUri(predefinedUri, '.');
                     return [...Array.from(includeSet),
                         ...Array.from(this._inspectRecords.keys())
                             .filter(uri => uri.startsWith(predefinedDirectory))
-                            .filter(uri => uri.endsWith('.as') && uri !== record.uri)];
+                            .filter(uri => uri.endsWith('.as') && uri !== record.uri)
+                            .filter(projectFilter)];
                 } else {
                     // No user as.predefined — include every .as file currently known in the
                     // workspace (i.e. all files the LSP has opened or discovered so far).
                     return [...Array.from(includeSet),
                         ...Array.from(this._inspectRecords.keys())
-                            .filter(uri => uri.endsWith('.as') && uri !== record.uri)];
+                            .filter(uri => uri.endsWith('.as') && uri !== record.uri)
+                            .filter(projectFilter)];
                 }
             }
         }
@@ -318,6 +337,23 @@ export class AnalysisResolver {
         }
     }
 
+    /**
+     * Creates a filter function that restricts URIs to the same project as the given file.
+     * In single-project mode (no projects defined), returns a pass-through filter.
+     */
+    private createProjectFilter(fileUri: string): (uri: string) => boolean {
+        if (!isMultiProjectMode()) return () => true;
+
+        const project = getProjectForUri(fileUri);
+        if (project === undefined) return () => true;
+
+        return (uri: string) => {
+            // Built-in predefined and .as.predefined files are always allowed
+            if (uri === this._builtInPredefinedUri || uri.endsWith('.as.predefined')) return true;
+            return uri.startsWith(project.sourceDirUri);
+        };
+    }
+
     private findPredefinedUri(targetUri: string): string | undefined {
         const dirs = getParentDirectoryList(targetUri);
 
@@ -345,11 +381,18 @@ export class AnalysisResolver {
         }
 
         // No user as.predefined found. When implicitMutualInclusion is enabled, scan
-        // the workspace root so all project .as files are discovered. The workspace root
-        // is supplied by the LSP client (${workspaceFolder}) via setWorkspaceRoot().
+        // the appropriate directory so all project .as files are discovered.
+        // In multi-project mode, scan only the project's source directory.
+        // Otherwise, scan the workspace root (supplied by the LSP client via setWorkspaceRoot()).
         // Fall back to the file's own directory if no workspace root is known yet.
         if (getGlobalSettings().implicitMutualInclusion) {
-            const scanRoot = this._workspaceRootUri ?? (dirs[0] ? dirs[0] + '/' : undefined);
+            let scanRoot: string | undefined;
+            const project = getProjectForUri(targetUri);
+            if (project !== undefined) {
+                scanRoot = project.sourceDirUri;
+            } else {
+                scanRoot = this._workspaceRootUri ?? (dirs[0] ? dirs[0] + '/' : undefined);
+            }
             if (scanRoot !== undefined && !this._scannedImplicitDirectories.has(scanRoot)) {
                 this._scannedImplicitDirectories.add(scanRoot);
                 const total = this.countAsFiles(scanRoot);

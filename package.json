@@ -100,6 +100,16 @@
                 "category": "AngelScript"
             },
             {
+                "command": "angelScript.bundleProject",
+                "title": "Bundle Project...",
+                "category": "AngelScript"
+            },
+            {
+                "command": "angelScript.bundleAll",
+                "title": "Bundle All Projects",
+                "category": "AngelScript"
+            },
+            {
                 "command": "angelScript.openSettings",
                 "title": "View Settings",
                 "category": "AngelScript"
@@ -318,19 +328,54 @@
                     "scope": "window",
                     "type": "string",
                     "default": "source",
-                    "description": "Default source directory for bundling .as files (relative to workspace root)."
+                    "description": "Default source directory for bundling .as files (relative to workspace root). Used when no projects are defined."
                 },
                 "angelScript.bundler.outputFile": {
                     "scope": "window",
                     "type": "string",
                     "default": "output/bundled.as",
-                    "description": "Default output file path for the bundled script (relative to workspace root)."
+                    "description": "Default output file path for the bundled script (relative to workspace root). Used when no projects are defined."
                 },
                 "angelScript.bundler.stripComments": {
                     "scope": "window",
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to strip comments by default when bundling."
+                },
+                "angelScript.projects": {
+                    "scope": "window",
+                    "type": "array",
+                    "default": [],
+                    "description": "Define multiple AngelScript projects within a single workspace. Each project has its own source directory, output file, and LSP mode. When defined, projects are isolated — files in one project won't see symbols from another.",
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "sourceDirectory", "outputFile"],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Display name for this project (shown in bundle picker, status bar, etc.)."
+                            },
+                            "sourceDirectory": {
+                                "type": "string",
+                                "description": "Source directory for this project's .as files (relative to workspace root)."
+                            },
+                            "outputFile": {
+                                "type": "string",
+                                "description": "Output file path for the bundled script (relative to workspace root, or absolute path)."
+                            },
+                            "stripComments": {
+                                "type": "boolean",
+                                "default": true,
+                                "description": "Whether to strip comments when bundling this project."
+                            },
+                            "lspMode": {
+                                "type": "string",
+                                "enum": ["full", "syntaxOnly"],
+                                "default": "full",
+                                "description": "LSP mode for this project. 'full' enables all IntelliSense features (completions, hover, go-to-definition, type checking). 'syntaxOnly' provides syntax highlighting and parser errors only — useful for secondary projects you aren't actively developing."
+                            }
+                        }
+                    }
                 }
             }
         },

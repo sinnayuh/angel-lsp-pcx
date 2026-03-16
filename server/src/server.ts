@@ -11,7 +11,7 @@ import {provideSemanticTokens} from "./services/semanticTokens";
 import {provideReferences} from "./services/reference";
 import {TextEdit} from "vscode-languageserver-types/lib/esm/main";
 import {Location} from "vscode-languageserver";
-import {resetGlobalSettings} from "./core/settings";
+import {resetGlobalSettings, getGlobalSettings, setResolvedProjects, getProjectForUri, isMultiProjectMode, ResolvedProject, ProjectConfig} from "./core/settings";
 import {formatFile} from "./formatter/formatter";
 import {provideSignatureHelp} from "./services/signatureHelp";
 import {TextLocation, TextPosition, TextRange} from "./compiler_tokenizer/textLocation";
@@ -32,6 +32,10 @@ import {moveInlayHintByChanges} from "./service/contentChangeApplier";
 import {provideDefinitionFallback} from "./services/definitionExtension";
 import {CodeActionWrapper} from "./actions/utils";
 
+import {pathToFileURL} from "node:url";
+import * as path from "path";
+import {fileURLToPath} from "url";
+
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const s_connection = lsp.createConnection(lsp.ProposedFeatures.all);
@@ -44,6 +48,47 @@ let s_hasWorkspaceDiagnosticsRefreshCapability = false;
 
 let s_hasDiagnosticRelatedInformationCapability = false;
 
+let s_workspaceRootUri: string | undefined = undefined;
+
+/**
+ * Returns true if the given URI has full LSP features enabled.
+ * Files in syntaxOnly projects only get syntax highlighting and parser errors.
+ */
+function hasFullLsp(uri: string): boolean {
+    const project = getProjectForUri(uri);
+    if (project === undefined) return true; // Not in a defined project = full LSP
+    return project.config.lspMode === 'full';
+}
+
+/**
+ * Resolve project configs to absolute file:// URIs based on workspace root.
+ */
+function resolveProjectConfigs(projects: ProjectConfig[], workspaceRootUri: string): ResolvedProject[] {
+    const resolved: ResolvedProject[] = [];
+    for (const proj of projects) {
+        if (!proj.name || !proj.sourceDirectory) continue;
+        try {
+            const rootPath = fileURLToPath(workspaceRootUri);
+            const absPath = path.resolve(rootPath, proj.sourceDirectory);
+            let uri = pathToFileURL(absPath).toString();
+            if (!uri.endsWith('/')) uri += '/';
+            resolved.push({
+                config: {
+                    name: proj.name,
+                    sourceDirectory: proj.sourceDirectory,
+                    outputFile: proj.outputFile ?? '',
+                    stripComments: proj.stripComments ?? true,
+                    lspMode: proj.lspMode ?? 'full',
+                },
+                sourceDirUri: uri,
+            });
+        } catch {
+            // Skip invalid project configs
+        }
+    }
+    return resolved;
+}
+
 s_connection.onInitialize((params: lsp.InitializeParams) => {
     const capabilities = params.capabilities;
 
@@ -51,6 +96,7 @@ s_connection.onInitialize((params: lsp.InitializeParams) => {
     // is bounded to the open workspace folder rather than climbing the filesystem.
     const workspaceRoot =
         params.workspaceFolders?.[0]?.uri ?? params.rootUri ?? undefined;
+    s_workspaceRootUri = workspaceRoot;
     if (workspaceRoot) s_inspector.setWorkspaceRoot(workspaceRoot);
 
     s_inspector.setScanProgressCallback((scanned, total) => {
@@ -145,6 +191,15 @@ s_connection.onInitialize((params: lsp.InitializeParams) => {
 function reloadSettings() {
     s_connection.workspace.getConfiguration('angelScript').then((config) => {
         resetGlobalSettings(config);
+
+        // Resolve project configs to absolute URIs when workspace root is known.
+        const projects = getGlobalSettings().projects;
+        if (projects && projects.length > 0 && s_workspaceRootUri) {
+            setResolvedProjects(resolveProjectConfigs(projects, s_workspaceRootUri));
+        } else {
+            setResolvedProjects([]);
+        }
+
         s_inspector.reinspectAllFiles();
         if (s_hasWorkspaceDiagnosticsRefreshCapability) {
             s_connection.languages.diagnostics.refresh();
@@ -279,6 +334,7 @@ s_connection.languages.semanticTokens.on((params) => {
 const s_inlayHintsCache: Map<string, lsp.InlayHint[]> = new Map();
 
 s_connection.languages.inlayHint.on((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return [];
     const uri = params.textDocument.uri;
     const range = TextRange.create(params.range);
     const record = s_inspector.getRecord(uri);
@@ -298,12 +354,14 @@ s_connection.languages.inlayHint.on((params) => {
 // -----------------------------------------------
 // Definition Provider
 s_connection.onDefinition((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return null;
+
     const record = s_inspector.getRecord(params.textDocument.uri);
     const globalScope = record.analyzerScope.globalScope;
 
     const caret = TextPosition.create(params.position);
 
-    const definition = provideDefinitionAsToken(globalScope, getAllGlobalScopes(), caret);
+    const definition = provideDefinitionAsToken(globalScope, getProjectGlobalScopes(params.textDocument.uri), caret);
     if (definition !== undefined) return definition.location.toServerLocation();
 
     return provideDefinitionFallback(record.rawTokens, globalScope, caret);
@@ -311,6 +369,21 @@ s_connection.onDefinition((params) => {
 
 function getAllGlobalScopes() {
     return s_inspector.getAllRecords().map(result => result.analyzerScope.globalScope);
+}
+
+/**
+ * Get global scopes filtered to the same project as the given URI.
+ * In single-project mode, returns all scopes.
+ */
+function getProjectGlobalScopes(uri: string) {
+    if (!isMultiProjectMode()) return getAllGlobalScopes();
+
+    const project = getProjectForUri(uri);
+    if (project === undefined) return getAllGlobalScopes();
+
+    return s_inspector.getAllRecords()
+        .filter(r => r.uri.startsWith(project.sourceDirUri) || r.uri.endsWith('.as.predefined'))
+        .map(r => r.analyzerScope.globalScope);
 }
 
 // Search for references of a symbol
@@ -323,18 +396,20 @@ function getReferenceLocations(params: lsp.TextDocumentPositionParams): Location
 
     const references = provideReferences(
         globalScope,
-        getAllGlobalScopes(),
+        getProjectGlobalScopes(params.textDocument.uri),
         caret);
     return references.map(ref => ref.location.toServerLocation());
 }
 
 s_connection.onReferences((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return [];
     return getReferenceLocations(params);
 });
 
 // -----------------------------------------------
 // Selection Range Provider
 s_connection.onDocumentSymbol(params => {
+    if (!hasFullLsp(params.textDocument.uri)) return [];
     return provideDocumentSymbol(s_inspector.getRecord(params.textDocument.uri).analyzerScope.globalScope);
 });
 
@@ -344,11 +419,12 @@ s_connection.onDocumentSymbol(params => {
 let s_lastCodeAction: CodeActionWrapper [] = [];
 
 s_connection.onCodeAction((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return [];
     const globalScope = s_inspector.getRecord(params.textDocument.uri).analyzerScope.globalScope;
 
     const range = TextRange.create(params.range);
 
-    s_lastCodeAction = provideCodeAction(globalScope, getAllGlobalScopes(), range);
+    s_lastCodeAction = provideCodeAction(globalScope, getProjectGlobalScopes(params.textDocument.uri), range);
 
     s_lastCodeAction.forEach((action, i) => action.action.data = i);
 
@@ -372,6 +448,7 @@ s_connection.onCodeActionResolve((action) => {
 // -----------------------------------------------
 // Rename Provider
 s_connection.onRenameRequest((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return null;
     const locations = getReferenceLocations(params);
 
     const changes: { [uri: string]: TextEdit[] } = {};
@@ -390,6 +467,7 @@ s_connection.onRenameRequest((params) => {
 // -----------------------------------------------
 // Hover Provider
 s_connection.onHover((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return null;
     s_inspector.flushRecord(params.textDocument.uri);
 
     const globalScope = s_inspector.getRecord(params.textDocument.uri).analyzerScope.globalScope;
@@ -404,6 +482,7 @@ s_connection.onHover((params) => {
 const s_lastCompletion: { uri: string; items: CompletionItemWrapper[] } = {uri: '', items: [],};
 
 s_connection.onCompletion((params: lsp.TextDocumentPositionParams): lsp.CompletionItem[] => {
+    if (!hasFullLsp(params.textDocument.uri)) return [];
     const uri = params.textDocument.uri;
     const caret = TextPosition.create(params.position);
 
@@ -453,6 +532,7 @@ s_connection.onCompletionResolve((item: lsp.CompletionItem): lsp.CompletionItem 
 // -----------------------------------------------
 // Signature Help Provider
 s_connection.onSignatureHelp((params) => {
+    if (!hasFullLsp(params.textDocument.uri)) return null;
     const uri = params.textDocument.uri;
 
     s_inspector.flushRecord(uri);

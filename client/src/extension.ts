@@ -15,6 +15,31 @@ let s_client: LanguageClient;
 let s_bundlerChannel: vscode.OutputChannel | undefined;
 let s_statusBar: vscode.StatusBarItem | undefined;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-project configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ProjectInfo {
+    name: string;
+    sourceDirectory: string;
+    outputFile: string;
+    stripComments: boolean;
+    lspMode: 'full' | 'syntaxOnly';
+}
+
+/**
+ * Read project definitions from settings. Returns empty array if none defined.
+ */
+function getProjects(): ProjectInfo[] {
+    const config = vscode.workspace.getConfiguration('angelScript');
+    const projects = config.get<ProjectInfo[]>('projects', []);
+    return projects.filter(p => p.name && p.sourceDirectory && p.outputFile);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activation
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function activate(context: ExtensionContext) {
     const serverModule = context.asAbsolutePath(
         path.join('server', 'out', 'server.js')
@@ -99,14 +124,25 @@ function setupStatusBar(context: ExtensionContext) {
 }
 
 async function showStatusBarMenu() {
-    const pick = await vscode.window.showQuickPick([
+    const projects = getProjects();
+    const items: {label: string; detail: string; command: string}[] = [];
+
+    if (projects.length > 0) {
+        items.push(
+            {label: '$(package) Bundle Project...', detail: 'Pick a project to bundle', command: 'angelScript.bundleProject'},
+            {label: '$(package) Bundle All Projects', detail: `Bundle all ${projects.length} projects`, command: 'angelScript.bundleAll'},
+        );
+    }
+
+    items.push(
         {label: '$(package) Bundle Script',                  detail: 'Ctrl+Alt+B',       command: 'angelScript.bundle'},
         {label: '$(package) Bundle Script (Strip Comments)', detail: 'Ctrl+Alt+Shift+B', command: 'angelScript.bundleStripped'},
         {label: '$(rocket) Initialize Project',              detail: 'Scaffold tasks.json + source/main.as', command: 'angelScript.initProject'},
         {label: '$(book) Open Perception Docs',              detail: 'docs.perception.cx', command: 'angelScript.openDocs'},
         {label: '$(gear) View Settings',                     detail: 'angelScript.*',     command: 'angelScript.openSettings'},
-    ], {placeHolder: 'Perception AngelScript'});
+    );
 
+    const pick = await vscode.window.showQuickPick(items, {placeHolder: 'Perception AngelScript'});
     if (pick) commands.executeCommand(pick.command);
 }
 
@@ -142,7 +178,35 @@ class AngelScriptDebugAdapterTrackerFactory implements vscode.DebugAdapterTracke
 class AngelScriptBundleTaskProvider implements vscode.TaskProvider {
     constructor(private readonly _context: ExtensionContext) {}
 
-    provideTasks(): vscode.Task[] { return []; }
+    provideTasks(): vscode.Task[] {
+        // Auto-provide tasks for each defined project
+        const projects = getProjects();
+        if (projects.length === 0) return [];
+
+        return projects.map(proj => {
+            const def: vscode.TaskDefinition = {
+                type: 'angelscript-bundle',
+                src: proj.sourceDirectory,
+                out: proj.outputFile,
+                strip: proj.stripComments,
+            };
+            return new vscode.Task(
+                def,
+                vscode.TaskScope.Workspace,
+                `Bundle: ${proj.name}`,
+                'angelscript-bundle',
+                new vscode.ShellExecution(
+                    `node ${[
+                        `"${this._context.asAbsolutePath(path.join('scripts', 'bundler.js'))}"`,
+                        `"${proj.sourceDirectory}"`,
+                        `"${proj.outputFile}"`,
+                        ...(proj.stripComments ? ['--strip'] : [])
+                    ].join(' ')}`
+                ),
+                []
+            );
+        });
+    }
 
     resolveTask(task: vscode.Task): vscode.Task | undefined {
         const def = task.definition as {type: string; src: string; out: string; strip?: boolean};
@@ -170,6 +234,8 @@ function subscribeCommands(context: ExtensionContext) {
     context.subscriptions.push(
         commands.registerCommand('angelScript.bundle', () => runBundleCommand(context, false)),
         commands.registerCommand('angelScript.bundleStripped', () => runBundleCommand(context, true)),
+        commands.registerCommand('angelScript.bundleProject', () => bundleProject(context)),
+        commands.registerCommand('angelScript.bundleAll', () => bundleAllProjects(context)),
         commands.registerCommand('angelScript.openSettings', () =>
             commands.executeCommand('workbench.action.openSettings', 'angelScript')
         ),
@@ -210,32 +276,53 @@ async function initProject(): Promise<void> {
 
     if (!fs.existsSync(tasksFile)) {
         fs.mkdirSync(vscodeDir, {recursive: true});
+
+        // Generate tasks based on projects if defined, otherwise use single default
+        const projects = getProjects();
+        const tasks = projects.length > 0
+            ? projects.map(proj => ({
+                "label": `Bundle: ${proj.name}`,
+                "type": "angelscript-bundle",
+                "src": proj.sourceDirectory,
+                "out": proj.outputFile,
+                "strip": proj.stripComments,
+                "group": {"kind": "build", "isDefault": false}
+            }))
+            : [{
+                "label": "Bundle Perception Script",
+                "type": "angelscript-bundle",
+                "src": defaultSrc,
+                "out": defaultOut,
+                "strip": defaultStrip,
+                "group": {"kind": "build", "isDefault": true}
+            }];
+
+        // Mark first task as default build
+        if (tasks.length > 0) {
+            (tasks[0] as any).group = {"kind": "build", "isDefault": true};
+        }
+
         fs.writeFileSync(tasksFile, JSON.stringify({
             "version": "2.0.0",
-            "tasks": [
-                {
-                    "label": "Bundle Perception Script",
-                    "type": "angelscript-bundle",
-                    "src": defaultSrc,
-                    "out": defaultOut,
-                    "strip": defaultStrip,
-                    "group": {
-                        "kind": "build",
-                        "isDefault": true
-                    }
-                }
-            ]
+            "tasks": tasks
         }, null, 4));
         created.push('.vscode/tasks.json');
     }
 
     // ── source/main.as ───────────────────────────────────────────────────────
-    const sourceDir = path.join(wsRoot, defaultSrc);
-    const mainFile = path.join(sourceDir, 'main.as');
+    // Create main.as for each project, or for the default source directory
+    const projects = getProjects();
+    const sourceDirs = projects.length > 0
+        ? projects.map(p => p.sourceDirectory)
+        : [defaultSrc];
 
-    if (!fs.existsSync(mainFile)) {
-        fs.mkdirSync(sourceDir, {recursive: true});
-        fs.writeFileSync(mainFile,
+    for (const srcDir of sourceDirs) {
+        const sourceDir = path.join(wsRoot, srcDir);
+        const mainFile = path.join(sourceDir, 'main.as');
+
+        if (!fs.existsSync(mainFile)) {
+            fs.mkdirSync(sourceDir, {recursive: true});
+            fs.writeFileSync(mainFile,
 `int main()
 {
     return 1;
@@ -245,14 +332,24 @@ void on_unload()
 {
 }
 `);
-        created.push(`${defaultSrc}/main.as`);
+            created.push(`${srcDir}/main.as`);
+        }
     }
 
-    // ── output/ directory ────────────────────────────────────────────────────
-    const outputDir = path.join(wsRoot, path.dirname(defaultOut));
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, {recursive: true});
-        created.push(`${path.dirname(defaultOut)}/`);
+    // ── output directories ──────────────────────────────────────────────────
+    const outputFiles = projects.length > 0
+        ? projects.map(p => p.outputFile)
+        : [defaultOut];
+
+    for (const outFile of outputFiles) {
+        // Only create output dir for relative paths
+        if (!path.isAbsolute(outFile)) {
+            const outputDir = path.join(wsRoot, path.dirname(outFile));
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir, {recursive: true});
+                created.push(`${path.dirname(outFile)}/`);
+            }
+        }
     }
 
     if (created.length === 0) {
@@ -260,6 +357,7 @@ void on_unload()
         return;
     }
 
+    const mainFile = path.join(wsRoot, sourceDirs[0], 'main.as');
     const choice = await vscode.window.showInformationMessage(
         `AngelScript: Created ${created.join(', ')}`,
         'Open main.as'
@@ -270,10 +368,186 @@ void on_unload()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bundle command
+// Multi-project bundle commands
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Bundle a specific project — shows picker if multiple projects defined.
+ */
+async function bundleProject(context: ExtensionContext): Promise<void> {
+    const projects = getProjects();
+    if (projects.length === 0) {
+        vscode.window.showInformationMessage(
+            'No projects defined. Add projects to angelScript.projects in settings, or use the standard Bundle command.'
+        );
+        return;
+    }
+
+    let selected: ProjectInfo;
+    if (projects.length === 1) {
+        selected = projects[0];
+    } else {
+        const items = projects.map(p => ({
+            label: p.name,
+            description: `${p.sourceDirectory} → ${p.outputFile}`,
+            detail: `LSP: ${p.lspMode}${p.stripComments ? ', strip comments' : ''}`,
+            project: p,
+        }));
+
+        const pick = await vscode.window.showQuickPick(items, {
+            placeHolder: 'Select a project to bundle',
+        });
+        if (!pick) return;
+        selected = pick.project;
+    }
+
+    await runBundleForProject(context, selected);
+}
+
+/**
+ * Bundle all defined projects sequentially.
+ */
+async function bundleAllProjects(context: ExtensionContext): Promise<void> {
+    const projects = getProjects();
+    if (projects.length === 0) {
+        vscode.window.showInformationMessage(
+            'No projects defined. Add projects to angelScript.projects in settings.'
+        );
+        return;
+    }
+
+    if (!s_bundlerChannel) {
+        s_bundlerChannel = vscode.window.createOutputChannel('AngelScript Bundler');
+    }
+    const outputChannel = s_bundlerChannel;
+    outputChannel.clear();
+    outputChannel.show(true);
+    outputChannel.appendLine(`[Bundle All] Bundling ${projects.length} project(s)...`);
+    outputChannel.appendLine('');
+
+    let successCount = 0;
+    for (const proj of projects) {
+        const success = await runBundleForProject(context, proj, outputChannel);
+        if (success) successCount++;
+        outputChannel.appendLine('');
+    }
+
+    outputChannel.appendLine(`[Bundle All] Done — ${successCount}/${projects.length} succeeded`);
+    if (successCount === projects.length) {
+        vscode.window.showInformationMessage(`AngelScript: All ${projects.length} projects bundled successfully.`);
+    } else {
+        vscode.window.showWarningMessage(
+            `AngelScript: ${successCount}/${projects.length} projects bundled. See output for details.`
+        );
+    }
+}
+
+/**
+ * Run the bundler for a specific project config. Returns true on success.
+ */
+async function runBundleForProject(
+    context: ExtensionContext,
+    project: ProjectInfo,
+    existingChannel?: vscode.OutputChannel
+): Promise<boolean> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showErrorMessage('AngelScript Bundle: No workspace folder open.');
+        return false;
+    }
+
+    const wsRoot = workspaceFolders[0].uri.fsPath;
+    const srcPath = path.resolve(wsRoot, project.sourceDirectory);
+    const outPath = path.isAbsolute(project.outputFile)
+        ? project.outputFile
+        : path.resolve(wsRoot, project.outputFile);
+
+    if (!s_bundlerChannel) {
+        s_bundlerChannel = vscode.window.createOutputChannel('AngelScript Bundler');
+    }
+    const outputChannel = existingChannel ?? s_bundlerChannel;
+    if (!existingChannel) {
+        outputChannel.clear();
+        outputChannel.show(true);
+    }
+
+    const effectiveStrip = project.stripComments;
+
+    // Pre-build diagnostic check scoped to this project's source directory
+    const allDiagnostics = vscode.languages.getDiagnostics();
+    interface DiagEntry { rel: string; line: number; col: number; message: string; }
+    const errorEntries: DiagEntry[] = [];
+
+    for (const [uri, diags] of allDiagnostics) {
+        if (!uri.fsPath.endsWith('.as')) continue;
+        // Only check diagnostics for files in this project's source directory
+        const rel = path.relative(srcPath, uri.fsPath);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) continue;
+
+        const relFromWs = path.relative(wsRoot, uri.fsPath);
+        for (const d of diags) {
+            if (d.severity === vscode.DiagnosticSeverity.Error) {
+                errorEntries.push({
+                    rel: relFromWs,
+                    line: d.range.start.line + 1,
+                    col:  d.range.start.character + 1,
+                    message: d.message,
+                });
+            }
+        }
+    }
+
+    if (errorEntries.length > 0) {
+        const fileCount = new Set(errorEntries.map(e => e.rel)).size;
+        outputChannel.appendLine(`[${project.name}] [Pre-build] ${errorEntries.length} error(s) in ${fileCount} file(s)`);
+        for (const e of errorEntries) {
+            outputChannel.appendLine(`  ${e.rel}:${e.line}:${e.col}: ${e.message}`);
+        }
+        outputChannel.appendLine('');
+    }
+
+    const bundlerScript = context.asAbsolutePath(path.join('scripts', 'bundler.js'));
+    const bundlerArgs = [bundlerScript, srcPath, outPath];
+    if (effectiveStrip) bundlerArgs.push('--strip');
+
+    outputChannel.appendLine(`[${project.name}] Bundling${effectiveStrip ? ' (strip)' : ''}...`);
+    outputChannel.appendLine(`[${project.name}]   src: ${srcPath}`);
+    outputChannel.appendLine(`[${project.name}]   out: ${outPath}`);
+
+    return new Promise<boolean>((resolve) => {
+        const proc = cp.spawn('node', bundlerArgs, {cwd: wsRoot});
+
+        proc.stdout.on('data', (data: Buffer) => outputChannel.append(data.toString()));
+        proc.stderr.on('data', (data: Buffer) => outputChannel.append(data.toString()));
+
+        proc.on('close', (code) => {
+            if (code === 0) {
+                outputChannel.appendLine(`[${project.name}] Done`);
+                resolve(true);
+            } else {
+                outputChannel.appendLine(`[${project.name}] Failed (exit code ${code})`);
+                resolve(false);
+            }
+        });
+
+        proc.on('error', (err) => {
+            outputChannel.appendLine(`[${project.name}] Error: ${err.message}`);
+            resolve(false);
+        });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bundle command (legacy single-project flow)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function runBundleCommand(context: ExtensionContext, strip: boolean): Promise<void> {
+    // If projects are defined, redirect to the project picker
+    const projects = getProjects();
+    if (projects.length > 0) {
+        return bundleProject(context);
+    }
+
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
         vscode.window.showErrorMessage('AngelScript Bundle: No workspace folder open.');
@@ -340,7 +614,7 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
 
     if (errorEntries.length > 0) {
         const fileCount = new Set(errorEntries.map(e => e.rel)).size;
-        outputChannel.appendLine(`[Pre-build] ⚠ ${errorEntries.length} error(s) in ${fileCount} file(s) — bundling may produce invalid output`);
+        outputChannel.appendLine(`[Pre-build] ${errorEntries.length} error(s) in ${fileCount} file(s) — bundling may produce invalid output`);
         outputChannel.appendLine('');
         for (const e of errorEntries) {
             // VS Code auto-linkifies "relative/path.as:line:col" in the Output panel
@@ -374,9 +648,9 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
 
         proc.on('close', (code) => {
             if (code === 0) {
-                outputChannel.appendLine('[Bundle] ✓ Complete');
+                outputChannel.appendLine('[Bundle] Done');
                 vscode.window.showInformationMessage(
-                    `AngelScript Bundle: ✓ Bundled to ${path.relative(wsRoot, outPath)}`,
+                    `AngelScript Bundle: Bundled to ${path.relative(wsRoot, outPath)}`,
                     'Open File'
                 ).then(choice => {
                     if (choice === 'Open File') {
@@ -384,7 +658,7 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
                     }
                 });
             } else {
-                outputChannel.appendLine(`[Bundle] ✗ Failed with exit code ${code}`);
+                outputChannel.appendLine(`[Bundle] Failed with exit code ${code}`);
                 vscode.window.showErrorMessage(
                     'AngelScript Bundle failed. See the "AngelScript Bundler" output panel for details.'
                 );
@@ -393,7 +667,7 @@ async function runBundleCommand(context: ExtensionContext, strip: boolean): Prom
         });
 
         proc.on('error', (err) => {
-            outputChannel.appendLine(`[Bundle] ✗ Error: ${err.message}`);
+            outputChannel.appendLine(`[Bundle] Error: ${err.message}`);
             vscode.window.showErrorMessage(`AngelScript Bundle error: ${err.message}`);
             resolve();
         });
