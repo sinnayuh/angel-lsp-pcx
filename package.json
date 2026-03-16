@@ -4,7 +4,7 @@
     "description": "AngelScript Language Server pre-configured for Perception.cx — IntelliSense, type checking, bundler, and full API coverage out of the box.",
     "author": "sinnayuh",
     "license": "MIT",
-    "version": "0.3.95",
+    "version": "0.3.96",
     "repository": {
         "type": "git",
         "url": "https://github.com/sinnayuh/angel-lsp-pcx"
@@ -349,7 +349,11 @@
                     "description": "Define multiple AngelScript projects within a single workspace. Each project has its own source directory, output file, and LSP mode. When defined, projects are isolated — files in one project won't see symbols from another.",
                     "items": {
                         "type": "object",
-                        "required": ["name", "sourceDirectory", "outputFile"],
+                        "required": [
+                            "name",
+                            "sourceDirectory",
+                            "outputFile"
+                        ],
                         "properties": {
                             "name": {
                                 "type": "string",
@@ -370,7 +374,10 @@
                             },
                             "lspMode": {
                                 "type": "string",
-                                "enum": ["full", "syntaxOnly"],
+                                "enum": [
+                                    "full",
+                                    "syntaxOnly"
+                                ],
                                 "default": "full",
                                 "description": "LSP mode for this project. 'full' enables all IntelliSense features (completions, hover, go-to-definition, type checking). 'syntaxOnly' provides syntax highlighting and parser errors only — useful for secondary projects you aren't actively developing."
                             }
