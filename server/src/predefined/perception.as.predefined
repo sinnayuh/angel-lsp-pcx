@@ -345,12 +345,14 @@ class proc_t {
     uint64 get_import_rdata_address(uint64 module_base, const string &in import_name) const;
     bool virtual_query(uint64 address, uint64 &out region_start, uint64 &out region_size, uint32 &out protection, bool &out heap_likely) const;
     array<dictionary@>@ get_vad_snapshot(bool heap_likely_only) const;
+    bool is_valid_address(uint64 address) const;
     array<uint64>@ scan_u32(uint32 value, bool heap_only = false) const;
     array<uint64>@ scan_u64(uint64 value, bool heap_only = false) const;
     array<uint64>@ scan_float(float value, bool heap_only = false) const;
     array<uint64>@ scan_double(double value, bool heap_only = false) const;
     array<uint64>@ scan_string(const string &in value, bool heap_only = false) const;
     array<uint64>@ scan_wstring(const string &in value, bool heap_only = false) const;
+    array<uint64>@ scan_pointer(uint64 target, bool heap_only = false) const;
 
     // ── Game-specific helpers ────────────────────────────────────────────────
     uint64 cs2_get_interface(uint64 module_base, const string &in name) const;

@@ -180,16 +180,21 @@ export class AnalysisResolver {
     }
 
     private analyzeFile(record: PartialInspectRecord) {
-        // In multi-project mode, skip full analysis for syntaxOnly projects.
-        // Parser diagnostics (syntax errors) are still reported from the inspect step.
-        const project = getProjectForUri(record.uri);
-        if (project !== undefined && project.config.lspMode === 'syntaxOnly') {
-            record.isAnalyzerPending = false;
-            this._diagnosticsCallback({
-                uri: record.uri,
-                diagnostics: [...record.diagnosticsInParser]
-            });
-            return;
+        // In multi-project mode, skip full analysis for:
+        // - Files in syntaxOnly projects
+        // - Files outside all defined projects (not part of any project scope)
+        // Parser diagnostics (syntax errors) and syntax highlighting are still provided.
+        // Predefined files (.as.predefined) are always analyzed since they provide type info.
+        if (isMultiProjectMode() && !record.uri.endsWith('.as.predefined')) {
+            const project = getProjectForUri(record.uri);
+            if (project === undefined || project.config.lspMode === 'syntaxOnly') {
+                record.isAnalyzerPending = false;
+                this._diagnosticsCallback({
+                    uri: record.uri,
+                    diagnostics: [...record.diagnosticsInParser]
+                });
+                return;
+            }
         }
 
         const predefinedUri = this.findPredefinedUri(record.uri);

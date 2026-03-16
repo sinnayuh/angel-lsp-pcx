@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.3.96] — Missing Proc API & Out-of-Project Analysis Fix
+
+### Added
+- **`proc_t::is_valid_address()`** — check if an address is mapped inside the target process.
+- **`proc_t::scan_pointer()`** — scan for all locations in memory that contain a pointer to a given target address.
+
+### Fixed
+- **Files outside defined projects no longer trigger full analysis** — in multi-project mode, `.as` files that don't belong to any defined project now only get syntax highlighting and parser errors, not full type checking. Previously they were fully analyzed, which could cause cross-contamination and unnecessary work.
+
+---
+
 ## [0.3.95] — Multi-Project Support
 
 ### Added

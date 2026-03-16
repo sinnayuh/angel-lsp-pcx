@@ -52,11 +52,16 @@ let s_workspaceRootUri: string | undefined = undefined;
 
 /**
  * Returns true if the given URI has full LSP features enabled.
- * Files in syntaxOnly projects only get syntax highlighting and parser errors.
+ * In multi-project mode:
+ *   - Files in 'full' projects get full LSP
+ *   - Files in 'syntaxOnly' projects get syntax highlighting only
+ *   - Files outside all projects get syntax highlighting only
+ * In single-project mode (no projects defined): all files get full LSP.
  */
 function hasFullLsp(uri: string): boolean {
+    if (!isMultiProjectMode()) return true;
     const project = getProjectForUri(uri);
-    if (project === undefined) return true; // Not in a defined project = full LSP
+    if (project === undefined) return false; // Outside all projects = syntax only
     return project.config.lspMode === 'full';
 }
 
