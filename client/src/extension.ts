@@ -471,7 +471,7 @@ async function runBundleForProject(
         outputChannel.show(true);
     }
 
-    const effectiveStrip = project.stripComments;
+    const effectiveStrip = project.stripComments ?? true;
 
     // Pre-build diagnostic check scoped to this project's source directory
     const allDiagnostics = vscode.languages.getDiagnostics();

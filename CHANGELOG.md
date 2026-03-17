@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.98] — Fix stripComments Default for Projects
+
+### Fixed
+- **`stripComments` now defaults to `true` per project** — when a project entry in `angelScript.projects` omits `stripComments`, the bundler now correctly defaults to stripping comments (matching the schema default). Previously the field was read without a fallback, so omitting it silently kept comments in the output.
+
+---
+
 ## [0.3.97] — Custom Draw GPU API (D3D11)
 
 ### Added
