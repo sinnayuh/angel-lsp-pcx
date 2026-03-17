@@ -1,5 +1,27 @@
 # Change Log
 
+## [0.3.97] — Custom Draw GPU API (D3D11)
+
+### Added
+- **Full Custom Draw API** — added the entire D3D11 GPU rendering surface to the predefined file, covering all new functions and constants:
+  - **Topology constants** — `TOPO_TRIANGLE_LIST`, `TOPO_TRIANGLE_STRIP`, `TOPO_LINE_LIST`, `TOPO_LINE_STRIP`, `TOPO_POINT_LIST`
+  - **Blend constants** — `BLEND_*` factors (10) and `BLEND_OP_*` operations (5)
+  - **Vertex layout types** — `ELEM_FLOAT1/2/3/4`, `ELEM_BYTE4_UNORM`, `ELEM_UINT1`
+  - **Texture constants** — `FILTER_*` modes, `ADDRESS_*` modes, `STAGE_VS/PS/CS`, `CMP_*` depth comparison functions, `CULL_*` and `FILL_*` rasterizer modes
+  - **Shaders** — `create_shader`, `destroy_shader`, `create_compute_shader`, `destroy_compute_shader`, `dispatch_compute`
+  - **Buffers** — `create_vertex_buffer`, `create_index_buffer`, `create_constant_buffer`, `custom_bind_constant_buffer` (+ destroy variants)
+  - **Blend/Sampler** — `create_blend_state`, `create_sampler` (+ destroy variants)
+  - **Textures** — `create_texture`, `custom_update_texture`, `load_texture_mem`, `load_texture`, `get_texture_info`, `destroy_texture`
+  - **Render targets & depth** — `create_render_target`, `create_depth_buffer`, `custom_set_render_target`, `custom_set_render_target_ext`, `custom_reset_render_target`, `custom_clear_render_target`, `custom_clear_depth_buffer`, `custom_bind_rt_as_texture` (+ destroy variants)
+  - **Pipeline state** — `create_depth_stencil_state`, `custom_set_depth_stencil_state`, `create_rasterizer_state`, `custom_set_rasterizer_state` (+ destroy variants)
+  - **Structured buffers** — `create_structured_buffer`, `update_structured_buffer`, `bind_structured_buffer`, `destroy_structured_buffer`
+  - **Meshes** — `load_mesh_mem`, `load_mesh`, `get_mesh_info`, `destroy_mesh`, `create_mesh_raw`, `get_mesh_stride`
+  - **Draw calls** — `custom_draw`, `custom_draw_indexed`, `draw_mesh`
+  - **Viewport & texture** — `custom_set_viewport`, `custom_reset_viewport`, `custom_bind_texture`, `custom_restore_state`
+  - **Misc** — `capture_backbuffer`, `fpToIEEE`
+
+---
+
 ## [0.3.96] — Missing Proc API & Out-of-Project Analysis Fix
 
 ### Added

@@ -472,6 +472,198 @@ void clip_push(float x, float y, float w, float h);
 void clip_pop();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM DRAW API (Direct GPU / D3D11)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Primitive topology
+const int TOPO_TRIANGLE_LIST;
+const int TOPO_TRIANGLE_STRIP;
+const int TOPO_LINE_LIST;
+const int TOPO_LINE_STRIP;
+const int TOPO_POINT_LIST;
+
+// Blend factors
+const int BLEND_ZERO;
+const int BLEND_ONE;
+const int BLEND_SRC_ALPHA;
+const int BLEND_INV_SRC_ALPHA;
+const int BLEND_DEST_ALPHA;
+const int BLEND_INV_DEST_ALPHA;
+const int BLEND_SRC_COLOR;
+const int BLEND_INV_SRC_COLOR;
+const int BLEND_DEST_COLOR;
+const int BLEND_INV_DEST_COLOR;
+
+// Blend operations
+const int BLEND_OP_ADD;
+const int BLEND_OP_SUBTRACT;
+const int BLEND_OP_REV_SUBTRACT;
+const int BLEND_OP_MIN;
+const int BLEND_OP_MAX;
+
+// Vertex layout element types
+const int ELEM_FLOAT1;
+const int ELEM_FLOAT2;
+const int ELEM_FLOAT3;
+const int ELEM_FLOAT4;
+const int ELEM_BYTE4_UNORM;
+const int ELEM_UINT1;
+
+// Texture filter modes
+const int FILTER_POINT;
+const int FILTER_LINEAR;
+const int FILTER_ANISOTROPIC;
+
+// Texture address modes
+const int ADDRESS_WRAP;
+const int ADDRESS_CLAMP;
+const int ADDRESS_MIRROR;
+const int ADDRESS_BORDER;
+
+// Shader stage bind targets
+const int STAGE_VS;
+const int STAGE_PS;
+const int STAGE_CS;
+
+// Depth comparison functions
+const int CMP_NEVER;
+const int CMP_LESS;
+const int CMP_EQUAL;
+const int CMP_LESS_EQUAL;
+const int CMP_GREATER;
+const int CMP_NOT_EQUAL;
+const int CMP_GREATER_EQUAL;
+const int CMP_ALWAYS;
+
+// Rasterizer cull/fill modes
+const int CULL_NONE;
+const int CULL_FRONT;
+const int CULL_BACK;
+const int FILL_SOLID;
+const int FILL_WIREFRAME;
+
+// Shaders — layout format: "SEMANTIC:index:TYPE, ..." e.g. "POSITION:0:FLOAT2, COLOR:0:FLOAT4"
+uint64 create_shader(const string &in vs_source, const string &in ps_source, const string &in layout);
+void   destroy_shader(uint64 shader);
+
+// Compute shaders (cs_5_0) — entry point must be main
+uint64 create_compute_shader(const string &in cs_source);
+void   destroy_compute_shader(uint64 cs);
+void   dispatch_compute(uint64 cs, uint x, uint y, uint z);
+
+// Vertex buffers — stride = bytes per vertex, must match shader layout
+uint64 create_vertex_buffer(uint stride, uint max_vertices, bool dynamic);
+void   destroy_vertex_buffer(uint64 vb);
+
+// Index buffers — use_32bit: true for uint indices, false for uint16
+uint64 create_index_buffer(uint max_indices, bool use_32bit, bool dynamic);
+void   destroy_index_buffer(uint64 ib);
+
+// Constant buffers — size auto-aligned to 16 bytes; bound to both VS & PS at slot
+uint64 create_constant_buffer(uint size);
+void   destroy_constant_buffer(uint64 cb);
+
+// Persistent constant buffer bind to a specific stage/slot — use STAGE_VS, STAGE_PS, or STAGE_CS
+void custom_bind_constant_buffer(uint64 cb, const array<uint8> &in data, int slot, int stage);
+
+// Blend states
+uint64 create_blend_state(int src, int dst, int op, int src_alpha, int dst_alpha, int op_alpha);
+void   destroy_blend_state(uint64 bs);
+
+// Texture samplers
+uint64 create_sampler(int filter, int address_u, int address_v);
+void   destroy_sampler(uint64 s);
+
+// Textures — rgba_data must be width * height * 4 bytes
+uint64 create_texture(uint width, uint height, const array<uint8> &in rgba_data);
+void   destroy_texture(uint64 tex);
+
+// Partial texture update — rgba_data must be w * h * 4 bytes
+void custom_update_texture(uint64 tex, uint x, uint y, uint w, uint h, const array<uint8> &in rgba_data);
+
+// Texture loading from disk or memory (supports PNG, JPG, BMP, TGA, GIF)
+uint64 load_texture_mem(const array<uint8> &in data);
+uint64 load_texture(const string &in path);
+void   get_texture_info(uint64 tex, float &out w, float &out h);
+
+// Render targets — pass 0, 0 for width/height to match viewport size
+uint64 create_render_target(uint width, uint height);
+void   destroy_render_target(uint64 rt);
+
+// Depth buffers (D24S8) — pass 0, 0 to match viewport size
+uint64 create_depth_buffer(uint width, uint height);
+void   destroy_depth_buffer(uint64 db);
+
+// Depth/stencil state — pass 0 to custom_set_depth_stencil_state to reset to default
+uint64 create_depth_stencil_state(bool depth_enable, bool depth_write, int compare_func);
+void   destroy_depth_stencil_state(uint64 ds);
+void   custom_set_depth_stencil_state(uint64 ds);
+
+// Rasterizer state — pass 0 to custom_set_rasterizer_state to reset to default
+uint64 create_rasterizer_state(int cull_mode, int fill_mode, bool scissor_enable);
+void   destroy_rasterizer_state(uint64 rs);
+void   custom_set_rasterizer_state(uint64 rs);
+
+// Structured buffers — cpu_write=true: SRV only; gpu_write=true: SRV + UAV for CS
+uint64 create_structured_buffer(uint element_size, uint element_count, bool cpu_write, bool gpu_write);
+void   destroy_structured_buffer(uint64 sb);
+void   update_structured_buffer(uint64 sb, const array<uint8> &in data);
+void   bind_structured_buffer(uint64 sb, int slot, int stage);
+
+// Mesh loading (OBJ format)
+uint64 load_mesh_mem(const array<uint8> &in data);
+uint64 load_mesh(const string &in path);
+void   get_mesh_info(uint64 mesh, float &out vert_count, float &out index_count,
+                     float &out min_x, float &out min_y, float &out min_z,
+                     float &out max_x, float &out max_y, float &out max_z);
+void   destroy_mesh(uint64 mesh);
+
+// Procedural mesh from raw vertex + index byte arrays with any layout
+uint64 create_mesh_raw(const array<uint8> &in vertex_data, uint vertex_count, uint stride,
+                       const array<uint8> &in index_data, uint index_count, bool use_32bit);
+float  get_mesh_stride(uint64 mesh);
+
+// Main draw call
+void custom_draw(uint64 shader, uint64 vb,
+                 const array<uint8> &in vertex_data, uint vertex_count,
+                 int topology,
+                 uint64 blend, uint64 sampler, uint64 texture, int tex_slot,
+                 uint64 cb, const array<uint8> @cb_data, int cb_slot);
+
+// Indexed draw call
+void custom_draw_indexed(uint64 shader, uint64 vb,
+                         const array<uint8> &in vertex_data, uint vertex_count,
+                         uint64 ib, const array<uint8> &in index_data, uint index_count,
+                         int topology,
+                         uint64 blend, uint64 sampler, uint64 texture, int tex_slot,
+                         uint64 cb, const array<uint8> @cb_data, int cb_slot);
+
+// Draw a loaded or procedural mesh
+void draw_mesh(uint64 mesh, uint64 shader, int topology,
+               uint64 blend, uint64 sampler, uint64 texture, int tex_slot,
+               uint64 cb, const array<uint8> @cb_data, int cb_slot);
+
+// Render target control
+void custom_set_render_target(uint64 rt);
+void custom_set_render_target_ext(uint64 rt, uint64 depth_buffer);  // with depth buffer for 3D occlusion
+void custom_reset_render_target();
+void custom_clear_render_target(uint64 rt, float r, float g, float b, float a);
+void custom_clear_depth_buffer(uint64 db);
+void custom_bind_rt_as_texture(uint64 rt, int slot);
+void custom_restore_state();
+
+// Viewport and persistent texture binding
+void custom_set_viewport(float x, float y, float w, float h);
+void custom_reset_viewport();
+void custom_bind_texture(uint64 texture, uint64 sampler, int slot);  // Pass 0 for texture to bind backbuffer capture
+
+// Backbuffer capture — captures current backbuffer as shader resource at given slot
+void capture_backbuffer(int slot);
+
+// Float IEEE bit-reinterpretation — for packing floats into array<uint8> vertex data
+uint fpToIEEE(float value);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INPUT API
 // ─────────────────────────────────────────────────────────────────────────────
 
