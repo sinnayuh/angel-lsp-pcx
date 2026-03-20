@@ -212,9 +212,10 @@ float floor(float x);
 funcdef void CallbackFn(int callback_id, int data_index);
 funcdef void ButtonFn();
 funcdef bool UcHookFn(uint64 uc, uint64 addr);
+funcdef void __Internal_CallbackFn(int callback_id, int data_index);
 
 // Registers a recurring callback running every every_ms milliseconds.
-int register_callback(const CallbackFn@ fn, int every_ms, int data_index);
+int register_callback(const __Internal_CallbackFn@ fn, int every_ms, int data_index, bool render_on_top = false);
 void unregister_callback(int id);
 
 // ─────────────────────────────────────────────────────────────────────────────

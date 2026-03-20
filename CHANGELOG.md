@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.3.99] — Add __Internal_CallbackFn & Fix register_callback Signature
+
+### Added
+- **`__Internal_CallbackFn` funcdef** — added the engine's internal callback function type to the predefined file so `__Internal_CallbackFn@` no longer produces undefined-type errors.
+
+### Fixed
+- **`register_callback` signature** — updated to match the actual Perception API: now takes `const __Internal_CallbackFn@` (was `const CallbackFn@`) and includes the missing `render_on_top` parameter (`bool render_on_top = false`).
+
+---
+
 ## [0.3.98] — Fix stripComments Default for Projects
 
 ### Fixed
