@@ -28,6 +28,7 @@ import {documentOnTypeFormattingProvider} from "./services/documentOnTypeFormatt
 import {SimpleProfiler} from "./utils/simpleProfiler";
 import {printSymbolScope} from "./compiler_analyzer/symbolUtils";
 import {safeWriteFile} from "./utils/fileUtils";
+import {normalizeFileUri} from "./service/fileUtils";
 import {moveInlayHintByChanges} from "./service/contentChangeApplier";
 import {provideDefinitionFallback} from "./services/definitionExtension";
 import {CodeActionWrapper} from "./actions/utils";
@@ -75,7 +76,7 @@ function resolveProjectConfigs(projects: ProjectConfig[], workspaceRootUri: stri
         try {
             const rootPath = fileURLToPath(workspaceRootUri);
             const absPath = path.resolve(rootPath, proj.sourceDirectory);
-            let uri = pathToFileURL(absPath).toString();
+            let uri = normalizeFileUri(pathToFileURL(absPath).toString());
             if (!uri.endsWith('/')) uri += '/';
             resolved.push({
                 config: {

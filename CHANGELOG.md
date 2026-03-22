@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.100] — Fix Multi-Project Go-to-Definition on Windows
+
+### Fixed
+- **Go-to-definition broken in multi-project mode on Windows** — `resolveProjectConfigs` produced `sourceDirUri` with a literal colon (`file:///d:/...`) while VSCode sends document URIs with a percent-encoded colon (`file:///d%3A/...`). The `startsWith` check in `getProjectForUri` never matched, so every file appeared outside all projects and received `syntaxOnly` treatment — disabling go-to-definition, hover, references, completions, and all other full LSP features. Fixed by normalizing the URI through the existing `normalizeFileUri` function.
+
+---
+
 ## [0.3.99] — Add __Internal_CallbackFn & Fix register_callback Signature
 
 ### Added

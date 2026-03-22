@@ -28,7 +28,7 @@ export function resolveUri(baseUri: string, relativePath: string): string {
     }
 }
 
-function normalizeFileUri(uri: string) {
+export function normalizeFileUri(uri: string) {
     // Case 1: Normalize drive letter to "c%3A"
     // Example: file:///C:/... --> file:///c%3A/...
     uri = uri.replace(
