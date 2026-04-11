@@ -459,7 +459,13 @@ function areFunctionsEqual(src: SymbolFunction, dest: SymbolFunction): boolean {
         if (srcParam.equals(destParam) === false) return false;
     }
 
-    return true;
+    // Funcdef compatibility also requires matching return types.
+    // `void fn(int,int)` must not silently satisfy `int fn(int,int)` and vice versa.
+    const srcReturn = normalizeType(src.returnType);
+    const destReturn = normalizeType(dest.returnType);
+    if (srcReturn === undefined && destReturn === undefined) return true;
+    if (srcReturn === undefined || destReturn === undefined) return false;
+    return srcReturn.equals(destReturn);
 }
 
 function areTemplateTypesEqual(src: ResolvedType, dest: ResolvedType): boolean {

@@ -79,6 +79,7 @@ import {Mutable} from "../utils/utilities";
 import {getGlobalSettings} from "../core/settings";
 import {applyTemplateTranslator, ResolvedType, TemplateTranslator} from "./resolvedType";
 import {analyzerDiagnostic} from "./analyzerDiagnostic";
+import {isPerceptionValueType} from "./perceptionTypes";
 import {getBoundingLocationBetween, TokenRange} from "../compiler_tokenizer/tokenRange";
 import {AnalyzerScope} from "./analyzerScope";
 import {canComparisonOperatorCall, checkOverloadedOperatorCall, evaluateNumberOperatorCall} from "./operatorCall";
@@ -257,8 +258,17 @@ export function analyzeParamList(scope: SymbolScope, paramList: NodeParamList) {
 
 // BNF: TYPE          ::= ['const'] SCOPE DATATYPE ['<' TYPE {',' TYPE} '>'] { ('[' ']') | ('@' ['const']) }
 export function analyzeType(scope: SymbolScope, nodeType: NodeType): ResolvedType | undefined {
+    // `@` in the source gives `refModifier`. Arrays keep their pre-existing handling
+    // (downstream code treats array<T> without propagating isHandler to avoid regressions).
+    const isHandler = nodeType.refModifier !== undefined ? true : undefined;
+
     const reservedType = nodeType.isArray ? undefined : analyzeReservedType(scope, nodeType);
-    if (reservedType !== undefined) return reservedType;
+    if (reservedType !== undefined) {
+        if (nodeType.refModifier !== undefined) {
+            reportHandleOnNonReferenceType(nodeType, reservedType);
+        }
+        return reservedType;
+    }
 
     const typeIdentifier = nodeType.dataType.identifier;
 
@@ -283,7 +293,10 @@ export function analyzeType(scope: SymbolScope, nodeType: NodeType): ResolvedTyp
                 scope,
                 typeIdentifier,
                 specializationSymbol.symbol,
-                specializationSymbol.scope
+                specializationSymbol.scope,
+                isHandler,
+                undefined,
+                nodeType,
             );
         }
     }
@@ -305,13 +318,43 @@ export function analyzeType(scope: SymbolScope, nodeType: NodeType): ResolvedTyp
 
     const {symbol: foundSymbol, scope: foundScope} = symbolAndScope;
     if (foundSymbol.isFunctionHolder() && foundSymbol.first.linkedNode.nodeName === NodeName.FuncDef) {
-        return completeAnalyzingType(scope, typeIdentifier, foundSymbol.first, foundScope, true);
+        return completeAnalyzingType(scope, typeIdentifier, foundSymbol.first, foundScope, true, undefined, nodeType);
     } else if (foundSymbol instanceof SymbolType === false) {
         analyzerDiagnostic.error(typeIdentifier.location, `'${givenIdentifier}' is not a type.`);
         return undefined;
     } else {
         const typeTemplates = analyzeTemplateTypes(scope, givenTypeTemplates, foundSymbol.templateTypes);
-        return completeAnalyzingType(scope, typeIdentifier, foundSymbol, foundScope, undefined, typeTemplates);
+        return completeAnalyzingType(scope, typeIdentifier, foundSymbol, foundScope, isHandler, typeTemplates, nodeType);
+    }
+}
+
+// Emits a diagnostic when a type is used with `@` but the underlying type cannot
+// be referenced as an object handle (primitive, enum, or engine value type).
+function reportHandleOnNonReferenceType(nodeType: NodeType, resolved: ResolvedType): void {
+    if (nodeType.refModifier === undefined) return;
+
+    const typeOrFunc = resolved.typeOrFunc;
+    if (typeOrFunc.isFunction()) return; // funcdefs legitimately use `@`
+
+    const symbolType = typeOrFunc as SymbolType;
+    const typeName = symbolType.identifierText;
+
+    let reason: string | undefined;
+    if (symbolType.isPrimitiveType() && typeName !== 'void') {
+        reason = `'${typeName}' is a primitive type`;
+    } else if (typeName === 'void') {
+        reason = `'void' cannot be used with a handle`;
+    } else if (symbolType.isEnumType()) {
+        reason = `'${typeName}' is an enum`;
+    } else if (isPerceptionValueType(typeName)) {
+        reason = `'${typeName}' is a value type`;
+    }
+
+    if (reason !== undefined) {
+        analyzerDiagnostic.error(
+            nodeType.dataType.identifier.location,
+            `Object handle is not supported for this type — ${reason}.`
+        );
     }
 }
 
@@ -331,17 +374,24 @@ function completeAnalyzingType(
     foundScope: SymbolScope,
     isHandler?: boolean,
     typeTemplates?: TemplateTranslator | undefined,
+    nodeType?: NodeType,
 ): ResolvedType | undefined {
     getActiveGlobalScope().pushReference({
         toSymbol: foundSymbol,
         fromToken: identifier
     });
 
-    return ResolvedType.create({
+    const resolved = ResolvedType.create({
         typeOrFunc: foundSymbol,
         isHandler: isHandler,
         templateTranslator: typeTemplates
     });
+
+    if (nodeType !== undefined && nodeType.refModifier !== undefined) {
+        reportHandleOnNonReferenceType(nodeType, resolved);
+    }
+
+    return resolved;
 }
 
 // PRIMTYPE | '?' | 'auto'

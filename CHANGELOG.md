@@ -1,5 +1,22 @@
 # Change Log
 
+## [0.4.0] — Analyzer Bullet-Proofing: Value-Type Handles & Funcdef Return Matching
+
+### Added
+- **Object handle (`@`) validation on non-reference types** — the analyzer now emits `Object handle is not supported for this type` when `@` is applied to a type that the Perception engine registers as `asOBJ_VALUE`. Previously the LSP silently accepted these and the script only failed at load time. Covered value types: `proc_t`, `mutex_t`, `vector2/3/4`, `quaternion`, `matrix4x4`, `atomic_int8…64`, `atomic_uint8…64`, `ws_t`, `zydis_request_t`, `zydis_builder_t`, `zydis_decoded_t`, `uc_engine_t`, `uc_context_t`, `uc_hook_t`. Same diagnostic also fires for `@` on primitive types (`int@`, `float@`, …) and enums.
+- **Perception value-type registry** — new `compiler_analyzer/perceptionTypes.ts` provides the authoritative list of `asOBJ_VALUE` names; extend it there as new value types are registered by the engine.
+
+### Fixed
+- **`refModifier` was parsed but dropped in the analyzer** — `NodeType.refModifier` (the `@` marker) was only used by the formatter/printer; the analyzer never propagated it to `ResolvedType.isHandler`. Fixed, so downstream code now sees the correct handle-ness for every type usage.
+- **Funcdef compatibility ignored return type** — `areFunctionsEqual` in `typeConversion.ts` only compared parameter lists, so e.g. `int my_callback(int, int)` silently satisfied a `void(int, int)@` funcdef. This masked bad `register_callback` usage. Now return types must also match.
+
+### Tests
+- New `test/compiler/analyzer/handleOnNonReference.spec.ts` — covers value-type, primitive, and enum `@` cases plus the reference-type happy path.
+- New `test/compiler/analyzer/perceptionCallback.spec.ts` — covers `register_callback` with correct signature plus four mismatch flavours (wrong arity, wrong param type, wrong return type).
+- Suite: 95 → 106 passing.
+
+---
+
 ## [0.3.100] — Fix Multi-Project Go-to-Definition on Windows
 
 ### Fixed
